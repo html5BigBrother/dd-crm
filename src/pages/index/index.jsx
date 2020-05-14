@@ -30,7 +30,7 @@ class Index extends Component {
       current: 0,
       menuOptions: [
         { text: '工作台', icon: icon_demo, url: '/pages/doList/doList' },
-        { text: '销售管理', icon: icon_demo, url: '' },
+        { text: '销售管理', icon: icon_demo, url: '/pages/saleManage/saleManage' },
       ]
     }
   }

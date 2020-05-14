@@ -1,9 +1,13 @@
 import Taro, { Component } from '@tarojs/taro'
 import { View, Button, Text, Navigator, Image, Picker } from '@tarojs/components'
 import { AtTabs, AtTabsPane, AtButton, AtFloatLayout, AtTextarea, AtIcon } from 'taro-ui'
-import './doList.styl'
+import './saleManage.styl'
 
-import { taskStatus, taskType, dealStatus } from '../../utils/enums'
+import { taskStatus, taskType, dealStatus, maturity, intentionDegree,
+  normalSelect, secondarySalesWillingness, currentProgress, vipLevel,
+  customerSource, leadType, companyType, registerSource, creditStatus,
+  source, mark
+} from '../../utils/enums'
 
 class Index extends Component {
 
@@ -12,8 +16,13 @@ class Index extends Component {
     this.state = {
       current: 0,
       isOpenedFloat: false,
-      rangeData: [],
-      rangeIndex: 0,
+      rangeDataLoser: [
+        { key: '0', label: '否' },
+        { key: '1', label: '是' },
+      ],
+      rangeIndexLoser: 0,
+      rangeIndexNextDate: '',
+      rangeIndexNextTime: '',
       todoList: [
         {
           "id":1443,
@@ -211,13 +220,7 @@ class Index extends Component {
     }
   }
 
-  componentDidMount() {
-    let rangeData = []
-    for(let i in dealStatus) {
-      rangeData.push({ key: i, label: dealStatus[i] })
-    }
-    this.setState({ rangeData })
-  }
+  componentDidMount() {}
 
   componentWillReceiveProps (nextProps) {
     console.log(this.props, nextProps)
@@ -237,7 +240,7 @@ class Index extends Component {
     })
   }
 
-  onClickHandle() {
+  onClickDaily() {
     this.setState({ isOpenedFloat: true })
   }
 
@@ -246,32 +249,64 @@ class Index extends Component {
     this.setState({ isOpenedFloat })
   }
 
-  onChangeDealStatus(e) {
-    this.setState({ rangeIndex: e.detail.value })
+  onChangeLoser(e) {
+    this.setState({ rangeIndexLoser: e.detail.value })
   }
 
-  renderTodoList() {
+  onChangeNextDate(e) {
+    this.setState({ rangeIndexNextDate: e.detail.value })
+  }
+
+  onChangeNextTime(e) {
+    this.setState({ rangeIndexNextTime: e.detail.value })
+  }
+
+  renderPrivateList() {
     const { todoList } = this.state
     return (
-      <View className='p-section-todo'>
-        <View className='p-list-todo list-style-sheet'>
+      <View className='p-section-private'>
+        <View className='p-list list-style-sheet'>
           {
             todoList.map((item) =>
               <View className='sheet-item' key={item.id}>
                 <View className='sheet-item-content'>
-                  <View className='sheet-item-title'>工单编号：{item.id}</View>
-                  <View>企业名称：{item.companyName}</View>
-                  <View>创建人：{item.id}</View>
+                  <View className='sheet-item-title'>企业名称：{item.companyName}</View>
+                  <View>leadsId：{item.id}</View>
+                  <View>成熟度：{maturity[item.maturity]}</View>
                   <View>工单类型：{taskType[item.taskType]}</View>
-                  <View>工单内容：{item.content}</View>
-                  <View>创建时间：{item.gmtCreated }</View>
-                  <View>期望完成时间：{item.gmtExpect}</View>
-                  <View>是否过期失效：{item.setExpired ? '是' : '否'}</View>
-                  <View>leads ID：{item.leadsId}</View>
-                  <View>当前状态：{taskStatus[item.status]}</View>
+                  <View>意向程度：{intentionDegree[item.intentionDegree]}</View>
+                  <View>是否战败：{normalSelect[item.isLoser]}</View>
+                  <View>二次销售意愿度：{secondarySalesWillingness[item.secondarySalesWillingness]}</View>
+                  <View>当前进度：{currentProgress[item.currentProgress]}</View>
+                  <View>最近联系时间：{item.lastContactTime}</View>
+                  <View>最近一次获得客户时间：{item.lastGetCustomersTime}</View>
+                  <View>会员等级：{item.userId ? vipLevel[item.vipLevel] : '-'}</View>
+                  <View>客户来源：{customerSource[item.customerSource]}</View>
+                  <View>所在地区：{`${item.provinceName} - ${item.cityName} - ${item.areaName}`}</View>
+                  <View>客户属性：{leadType[item.leadType]}</View>
+                  <View>客户类型：{companyType[item.companyType]}</View>
+                  <View>是否注册：{item.hasRegister ? '是' : '否'}</View>
+                  <View>注册手机号：{item.registerPhone}</View>
+                  <View>注册来源：{registerSource[item.registerSource]}</View>
+                  <View>注册时间：{item.registerTime}</View>
+                  <View>是否已实名：{item.hasRealName ? '是' : '否'}</View>
+                  <View>当前是否有赊销：{item.hasCreditGranting ? '是' : '否'}</View>
+                  <View>赊销状态：{item.creditStatus === 'INVALID' ? item.creditSleep === '1' ? '休眠' : '失效' : (creditStatus[item.creditStatus] || '-')}</View>
+                  <View>赊销额度生效时间：{item.gmtCreditChecked}</View>
+                  <View>是否完成首次支付货款：{item.hasLoan ? '是' : '否'}</View>
+                  <View>首次支付货款时间：{item.gmtLoan}</View>
+                  <View>当前跟进电销：{item.electricitySaler ? `${item.electricitySaler.department}-${item.electricitySaler.name}(${item.electricitySaler.jobNumber})` : '-'}</View>
+                  <View>当前跟进业务员：{item.salesman ? `${item.salesman.department}-${item.salesman.name}(${item.salesman.jobNumber})` : '-'}</View>
+                  <View>当前跟进客服：{item.customerService ? `${item.customerService.department}-${item.customerService.name}(${item.customerService.jobNumber})` : '-'}</View>
+                  <View>leads来源：{item.channelName ? item.channelName : source[item.source]}</View>
+                  <View>任务名称：{item.whiteTaskName || '-'}</View>
+                  {/* <View>渠道名称：{}</View> */}
+                  <View>leads创建时间：{item.gmtCreated}</View>
+                  <View>标记：{mark[item.mark]}</View>
+                  <View>待跟进时间：{item.waitFollow || '-'}</View>
                 </View>
                 <View className='u-edit'>
-                  <AtButton className='u-btn-handle' type='secondary' size='small' onClick={this.onClickHandle.bind(this)}>处理</AtButton>
+                  <AtButton className='u-btn-handle' type='secondary' size='small' onClick={this.onClickDaily.bind(this)}>填写跟踪日志</AtButton>
                 </View>
               </View>
             )
@@ -281,29 +316,47 @@ class Index extends Component {
     )
   }
 
-  renderDoneList() {
+  renderPublicList() {
     const { todoList } = this.state
     return (
-      <View className='p-section-done'>
-        <View className='p-list-todo list-style-sheet'>
+      <View className='p-section-public'>
+        <View className='p-list list-style-sheet'>
           {
             todoList.map((item) =>
               <View className='sheet-item' key={item.id}>
                 <View className='sheet-item-content'>
-                  <View className='sheet-item-title'>工单编号：{item.id}</View>
-                  <View>创建人：{item.id}</View>
-                  <View>接收人：{item.id}</View>
+                <View className='sheet-item-title'>企业名称：{item.companyName}</View>
+                  <View>leadsId：{item.id}</View>
+                  <View>成熟度：{maturity[item.maturity]}</View>
                   <View>工单类型：{taskType[item.taskType]}</View>
-                  <View>工单内容：{item.content}</View>
-                  <View>处理状态：{dealStatus[item.dealStatus]}</View>
-                  <View>创建时间：{item.gmtCreated }</View>
-                  <View>期望完成时间：{item.gmtExpect}</View>
-                  <View>是否过期失效：{item.setExpired ? '是' : '否'}</View>
-                  <View>leads ID：{item.leadsId}</View>
-                  <View>企业名称：{item.companyName}</View>
-                  <View>当前状态：{taskStatus[item.status]}</View>
-                  <View>处理结果：{item.dealResult}</View>
-                  <View>处理时间：{item.gmtDeal}</View>
+                  <View>意向程度：{intentionDegree[item.intentionDegree]}</View>
+                  <View>是否战败：{normalSelect[item.isLoser]}</View>
+                  <View>二次销售意愿度：{secondarySalesWillingness[item.secondarySalesWillingness]}</View>
+                  <View>当前进度：{currentProgress[item.currentProgress]}</View>
+                  <View>最近联系时间：{item.lastContactTime}</View>
+                  <View>最近一次获得客户时间：{item.lastGetCustomersTime}</View>
+                  <View>会员等级：{item.userId ? vipLevel[item.vipLevel] : '-'}</View>
+                  <View>客户来源：{customerSource[item.customerSource]}</View>
+                  <View>所在地区：{`${item.provinceName} - ${item.cityName} - ${item.areaName}`}</View>
+                  <View>客户属性：{leadType[item.leadType]}</View>
+                  <View>客户类型：{companyType[item.companyType]}</View>
+                  <View>是否注册：{item.hasRegister ? '是' : '否'}</View>
+                  <View>注册手机号：{item.registerPhone}</View>
+                  <View>注册来源：{registerSource[item.registerSource]}</View>
+                  <View>注册时间：{item.registerTime}</View>
+                  <View>是否已实名：{item.hasRealName ? '是' : '否'}</View>
+                  <View>当前是否有赊销：{item.hasCreditGranting ? '是' : '否'}</View>
+                  <View>赊销状态：{item.creditStatus === 'INVALID' ? item.creditSleep === '1' ? '休眠' : '失效' : (creditStatus[item.creditStatus] || '-')}</View>
+                  <View>赊销额度生效时间：{item.gmtCreditChecked}</View>
+                  <View>是否完成首次支付货款：{item.hasLoan ? '是' : '否'}</View>
+                  <View>首次支付货款时间：{item.gmtLoan}</View>
+                  <View>当前跟进电销：{item.electricitySaler ? `${item.electricitySaler.department}-${item.electricitySaler.name}(${item.electricitySaler.jobNumber})` : '-'}</View>
+                  <View>当前跟进业务员：{item.salesman ? `${item.salesman.department}-${item.salesman.name}(${item.salesman.jobNumber})` : '-'}</View>
+                  <View>当前跟进客服：{item.customerService ? `${item.customerService.department}-${item.customerService.name}(${item.customerService.jobNumber})` : '-'}</View>
+                  <View>leads来源：{item.channelName ? item.channelName : source[item.source]}</View>
+                  <View>任务名称：{item.whiteTaskName || '-'}</View>
+                  {/* <View>渠道名称：{}</View> */}
+                  <View>leads创建时间：{item.gmtCreated}</View>
                 </View>
               </View>
             )
@@ -314,41 +367,59 @@ class Index extends Component {
   }
 
   render () {
-    const { current, isOpenedFloat, textValue, rangeData, rangeIndex } = this.state
-    const tabList = [{ title: '我的待办' }, { title: '我的办结' }]
+    const { current, isOpenedFloat, textValue, rangeDataLoser, rangeIndexLoser, rangeIndexNextDate, rangeIndexNextTime } = this.state
+    const tabList = [{ title: '我的客户' }, { title: '公海' }]
     return (
       <View className='p-page'>
         <View className='p-container'>
           <AtTabs current={current} tabList={tabList} onClick={this.onClickTab.bind(this)}>
             <AtTabsPane current={current} index={0}>
-              { this.renderTodoList() }
+              { this.renderPrivateList() }
             </AtTabsPane>
             <AtTabsPane current={current} index={1}>
-              { this.renderDoneList() }
+              { this.renderPublicList() }
             </AtTabsPane>
           </AtTabs>
+          {/* 底部弹框 */}
           <AtFloatLayout isOpened={isOpenedFloat} onClose={this.onChangeIsOpenedFloat.bind(this, false)}>
             <View className='form-style'>
               <View className='form-item'>
-                <View className='item-name'>处理状态</View>
+                <View className='item-name'>是否战败</View>
                 <View className='item-content'>
-                  <Picker mode='selector' range={rangeData} value={rangeIndex} rangeKey='label' onChange={this.onChangeDealStatus.bind(this)}>
+                  <Picker mode='selector' range={rangeDataLoser} value={rangeIndexLoser} rangeKey='label' onChange={this.onChangeLoser.bind(this)}>
                     <View className='item-select'>
-                      <View className='flex-1'>{rangeData[rangeIndex] ? rangeData[rangeIndex].label : '请选择'}</View>
+                      <View className='flex-1'>{rangeDataLoser[rangeIndexLoser] ? rangeDataLoser[rangeIndexLoser].label : '请选择'}</View>
                       <AtIcon value='chevron-right' color='rgba(0,0,0,0.3)'></AtIcon>
                     </View>
                   </Picker>
                 </View>
               </View>
               <View className='form-item'>
-                <View className='item-name'>处理结果</View>
+                <View className='item-name'>跟踪日志</View>
                 <View className='item-content'>
                   <AtTextarea
                     count={false}
                     value={textValue}
-                    placeholder='请填写处理结果'
-                    maxLength={50}
+                    placeholder='请填写跟踪日志'
+                    maxLength={200}
                   ></AtTextarea>
+                </View>
+              </View>
+              <View className='form-item'>
+                <View className='item-name'>约定下次沟通时间</View>
+                <View className='item-content'>
+                  <Picker mode='date' value={rangeIndexNextDate} onChange={this.onChangeNextDate.bind(this)}>
+                    <View className='item-select'>
+                      <View className='flex-1'>{rangeIndexNextDate ? rangeIndexNextDate : '请选择下次沟通日期'}</View>
+                      <AtIcon value='chevron-right' color='rgba(0,0,0,0.3)'></AtIcon>
+                    </View>
+                  </Picker>
+                  <Picker mode='time' value={rangeIndexNextTime} onChange={this.onChangeNextTime.bind(this)}>
+                    <View className='item-select'>
+                      <View className='flex-1'>{rangeIndexNextTime ? rangeIndexNextTime : '请选择下次沟通时间'}</View>
+                      <AtIcon value='chevron-right' color='rgba(0,0,0,0.3)'></AtIcon>
+                    </View>
+                  </Picker>
                 </View>
               </View>
             </View>

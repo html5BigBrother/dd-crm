@@ -28,8 +28,10 @@ class App extends Component {
 
   config = {
     pages: [
+      'pages/login/login',
       'pages/index/index',
-      'pages/doList/doList'
+      'pages/doList/doList',
+      'pages/saleManage/saleManage'
     ],
     window: {
       backgroundTextStyle: 'light',
