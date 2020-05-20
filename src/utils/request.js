@@ -1,7 +1,7 @@
 
 import Taro from '@tarojs/taro'
 
-// import { showErrorModal } from '@/utils/util.js'
+import { showModalError } from './util.js'
 import config from './config.js'
 import { set as setGlobalData, get as getGlobalData } from './globalData.js'
 
@@ -103,7 +103,7 @@ function doAjax({ method, url, contentType = 'json', data, loadingText, success,
         success && success(responseData)
       } else {
         if (!fail) {
-          // showErrorModal(data.message)
+          showModalError({ content: data.message })
         } else {
           fail(responseData)
         }
@@ -118,9 +118,9 @@ function doAjax({ method, url, contentType = 'json', data, loadingText, success,
       }
       let errMsg = res.errMsg
       if (/timeout|请求超时/.test(errMsg)) {
-        // showErrorModal('请求超时')
+        showModalError({ content: '请求超时' })
       } else if (/fail/.test(errMsg)) {
-        // showErrorModal('系统繁忙，请稍后再试')
+        showModalError({ content: '系统繁忙，请稍后再试' })
       }
       complete && complete(res)
     }

@@ -4,6 +4,8 @@ import { AtTabs, AtTabsPane, AtButton, AtFloatLayout, AtTextarea, AtIcon } from 
 import './doList.styl'
 
 import { taskStatus, taskType, dealStatus } from '../../utils/enums'
+import { set as setGlobalData, get as getGlobalData } from '../../utils/globalData.js'
+import request from '../../utils/request'
 
 class Index extends Component {
 
@@ -14,200 +16,28 @@ class Index extends Component {
       isOpenedFloat: false,
       rangeData: [],
       rangeIndex: 0,
-      todoList: [
-        {
-          "id":1443,
-          "taskType":"1",
-          "content":"????",
-          "leadsId":1,
-          "companyName":"上海西前实业有限公司",
-          "gmtExpect":"2028-02-01 00:00:00",
-          "setExpired":false,
-          "dealRole":"0",
-          "dealMemId":"",
-          "dealName":"",
-          "dealCode":"",
-          "dealGroup":"",
-          "receiveRole":"2",
-          "receiveMemId":"silulin",
-          "receiveName":"斯路林",
-          "receiveCode":"u170007",
-          "receiveGroup":"虚拟部门,特区,杭州区",
-          "createRole":"9",
-          "createMemId":"silulin",
-          "createName":"斯路林",
-          "createCode":"154606878,154804574",
-          "createGroup":"虚拟部门,特区,杭州区",
-          "dealResult":"",
-          "dealStatus":"",
-          "status":"0",
-          "gmtCreated":"2020-04-01 10:04:41",
-          "gmtDeal":"",
-          "gmtModified":"2020-04-01 10:04:41",
-          "leadsIds":"",
-          "receiveType":""
-        },
-        {
-          "id":1444,
-          "taskType":"1",
-          "content":"????",
-          "leadsId":2,
-          "companyName":"苏州德威鸿业国际贸易有限公司",
-          "gmtExpect":"2028-02-01 00:00:00",
-          "setExpired":false,
-          "dealRole":"0",
-          "dealMemId":"",
-          "dealName":"",
-          "dealCode":"",
-          "dealGroup":"",
-          "receiveRole":"2",
-          "receiveMemId":"silulin",
-          "receiveName":"斯路林",
-          "receiveCode":"u170007",
-          "receiveGroup":"虚拟部门,特区,杭州区",
-          "createRole":"9",
-          "createMemId":"silulin",
-          "createName":"斯路林",
-          "createCode":"154606878,154804574",
-          "createGroup":"虚拟部门,特区,杭州区",
-          "dealResult":"",
-          "dealStatus":"",
-          "status":"0",
-          "gmtCreated":"2020-04-01 10:04:41",
-          "gmtDeal":"",
-          "gmtModified":"2020-04-01 10:04:41",
-          "leadsIds":"",
-          "receiveType":""
-        },
-        {
-          "id":1441,
-          "taskType":"1",
-          "content":"????",
-          "leadsId":1,
-          "companyName":"上海西前实业有限公司",
-          "gmtExpect":"2028-02-01 00:00:00",
-          "setExpired":false,
-          "dealRole":"0",
-          "dealMemId":"",
-          "dealName":"",
-          "dealCode":"",
-          "dealGroup":"",
-          "receiveRole":"2",
-          "receiveMemId":"silulin",
-          "receiveName":"斯路林",
-          "receiveCode":"u170007",
-          "receiveGroup":"虚拟部门,特区,杭州区",
-          "createRole":"9",
-          "createMemId":"silulin",
-          "createName":"斯路林",
-          "createCode":"154606878,154804574",
-          "createGroup":"虚拟部门,特区,杭州区",
-          "dealResult":"",
-          "dealStatus":"",
-          "status":"0",
-          "gmtCreated":"2020-03-16 09:19:25",
-          "gmtDeal":"",
-          "gmtModified":"2020-03-16 09:19:25",
-          "leadsIds":"",
-          "receiveType":""
-        },
-        {
-          "id":1440,
-          "taskType":"1",
-          "content":"????",
-          "leadsId":2,
-          "companyName":"苏州德威鸿业国际贸易有限公司",
-          "gmtExpect":"2028-02-01 00:00:00",
-          "setExpired":false,
-          "dealRole":"0",
-          "dealMemId":"",
-          "dealName":"",
-          "dealCode":"",
-          "dealGroup":"",
-          "receiveRole":"2",
-          "receiveMemId":"silulin",
-          "receiveName":"斯路林",
-          "receiveCode":"u170007",
-          "receiveGroup":"虚拟部门,特区,杭州区",
-          "createRole":"9",
-          "createMemId":"silulin",
-          "createName":"斯路林",
-          "createCode":"154606878,154804574",
-          "createGroup":"虚拟部门,特区,杭州区",
-          "dealResult":"",
-          "dealStatus":"",
-          "status":"0",
-          "gmtCreated":"2020-03-16 09:17:13",
-          "gmtDeal":"",
-          "gmtModified":"2020-03-16 09:17:13",
-          "leadsIds":"",
-          "receiveType":""
-        },
-        {
-          "id":1438,
-          "taskType":"1",
-          "content":"????",
-          "leadsId":2,
-          "companyName":"苏州德威鸿业国际贸易有限公司",
-          "gmtExpect":"2028-02-01 00:00:00",
-          "setExpired":false,
-          "dealRole":"0",
-          "dealMemId":"",
-          "dealName":"",
-          "dealCode":"",
-          "dealGroup":"",
-          "receiveRole":"2",
-          "receiveMemId":"silulin",
-          "receiveName":"斯路林",
-          "receiveCode":"u170007",
-          "receiveGroup":"虚拟部门,特区,杭州区",
-          "createRole":"9",
-          "createMemId":"silulin",
-          "createName":"斯路林",
-          "createCode":"154606878,154804574",
-          "createGroup":"虚拟部门,特区,杭州区",
-          "dealResult":"",
-          "dealStatus":"",
-          "status":"0",
-          "gmtCreated":"2020-03-13 17:31:01",
-          "gmtDeal":"",
-          "gmtModified":"2020-03-13 17:31:01",
-          "leadsIds":"",
-          "receiveType":""
-        },
-        {
-          "id":1396,
-          "taskType":"3",
-          "content":"对已经有额度未下单的客户进行需求排摸",
-          "leadsId":98816,
-          "companyName":"仟金顶弯弯测试-1",
-          "gmtExpect":"2020-03-17 00:00:00",
-          "setExpired":false,
-          "dealRole":"0",
-          "dealMemId":"",
-          "dealName":"",
-          "dealCode":"",
-          "dealGroup":"",
-          "receiveRole":"2",
-          "receiveMemId":"zhangyanxin",
-          "receiveName":"张彦新",
-          "receiveCode":"u190352",
-          "receiveGroup":"北京区",
-          "createRole":"9",
-          "createMemId":"zhangyu",
-          "createName":"张宇",
-          "createCode":"57508456",
-          "createGroup":"北京区",
-          "dealResult":"",
-          "dealStatus":"",
-          "status":"0",
-          "gmtCreated":"2020-03-11 19:27:23",
-          "gmtDeal":"",
-          "gmtModified":"2020-03-11 19:27:23",
-          "leadsIds":"",
-          "receiveType":""
-        }
-      ]
+      textValue: '',
+      searchFormTodo: {
+        pageNo: 1,
+        pageSize: 10,
+        descs: 'gmt_created',
+        taskStatus: '0',
+        memberType: '1',
+        receiveName: '',
+        receiveMemId: ''
+      },
+      searchFormDone: {
+        pageNo: 1,
+        pageSize: 10,
+        descs: 'gmt_deal',
+        taskStatus: '1',
+        memberType: '2',
+        receiveName: '',
+        receiveMemId: ''
+      },
+      todoList: [],
+      doneList: [],
+      currentId: '',
     }
   }
 
@@ -217,6 +47,7 @@ class Index extends Component {
       rangeData.push({ key: i, label: dealStatus[i] })
     }
     this.setState({ rangeData })
+    this.switchCurrent()
   }
 
   componentWillReceiveProps (nextProps) {
@@ -235,10 +66,36 @@ class Index extends Component {
     this.setState({
       current: value
     })
+    this.switchCurrent(value)
   }
 
-  onClickHandle() {
-    this.setState({ isOpenedFloat: true })
+  onClickHandle(item) {
+    this.setState({
+      isOpenedFloat: true,
+      rangeIndex: '',
+      textValue: '',
+      currentId: item.id
+    })
+  }
+
+  onClickSubmit() {
+    const { currentId, rangeData, rangeIndex, textValue } = this.state
+    const data = {
+      dealStatus: rangeData[rangeIndex].key,
+      id: currentId,
+      processResult: textValue
+    }
+    request.post({
+      url: '/leads/tasks/process',
+      data: JSON.stringify(data),
+      bindLoading: true,
+      loadingText: '加载中',
+      success: () => {
+        Taro.showToast({ title: '成功' })
+        this.onChangeIsOpenedFloat(false)
+        this.switchCurrent()
+      }
+    })
   }
 
   onChangeIsOpenedFloat(isOpened) {
@@ -248,6 +105,64 @@ class Index extends Component {
 
   onChangeDealStatus(e) {
     this.setState({ rangeIndex: e.detail.value })
+  }
+
+  initSearchFormTodo () {
+    const { searchFormTodo } = this.state
+    const userInfo = getGlobalData('userInfo')
+
+    searchFormTodo.receiveName = userInfo.name
+    searchFormTodo.receiveMemId = userInfo.memberId
+    
+    return searchFormTodo
+  }
+
+  initSearchFormDone () {
+    const { searchFormDone } = this.state
+    const userInfo = getGlobalData('userInfo')
+
+    searchFormDone.receiveName = userInfo.name
+    searchFormDone.receiveMemId = userInfo.memberId
+
+    return searchFormDone
+  }
+
+  switchCurrent(value) {
+    const current = value || this.state.current
+    switch (current) {
+      case 0:
+        this.getLeadsListTodo()
+        break
+      case 1:
+        this.getLeadsListDone()
+        break
+    }
+  }
+
+  getLeadsListTodo() {
+    const data = this.initSearchFormTodo()
+    request.get({
+      url: '/leads/tasks/list',
+      data: data,
+      bindLoading: true,
+      loadingText: '加载中',
+      success: (resData) => {
+        this.setState({ todoList: resData.data.pagedRecords })
+      }
+    })
+  }
+
+  getLeadsListDone() {
+    const data = this.initSearchFormDone()
+    request.get({
+      url: '/leads/tasks/list',
+      data: data,
+      bindLoading: true,
+      loadingText: '加载中',
+      success: (resData) => {
+        this.setState({ doneList: resData.data.pagedRecords })
+      }
+    })
   }
 
   renderTodoList() {
@@ -271,7 +186,7 @@ class Index extends Component {
                   <View>当前状态：{taskStatus[item.status]}</View>
                 </View>
                 <View className='u-edit'>
-                  <AtButton className='u-btn-handle' type='secondary' size='small' onClick={this.onClickHandle.bind(this)}>处理</AtButton>
+                  <AtButton className='u-btn-handle' type='secondary' size='small' onClick={this.onClickHandle.bind(this, item)}>处理</AtButton>
                 </View>
               </View>
             )
@@ -282,12 +197,12 @@ class Index extends Component {
   }
 
   renderDoneList() {
-    const { todoList } = this.state
+    const { doneList } = this.state
     return (
       <View className='p-section-done'>
         <View className='p-list-todo list-style-sheet'>
           {
-            todoList.map((item) =>
+            doneList.map((item) =>
               <View className='sheet-item' key={item.id}>
                 <View className='sheet-item-content'>
                   <View className='sheet-item-title'>工单编号：{item.id}</View>
@@ -352,7 +267,7 @@ class Index extends Component {
                 </View>
               </View>
             </View>
-            <AtButton className='p-btn-submit' type='primary'>提交</AtButton>
+            <AtButton className='p-btn-submit' type='primary' onClick={this.onClickSubmit.bind(this)}>提交</AtButton>
           </AtFloatLayout>
         </View>
       </View>

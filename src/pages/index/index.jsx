@@ -8,6 +8,7 @@ import { add, minus, asyncAdd } from '../../actions/counter'
 import './index.styl'
 
 import icon_demo from '../../static/imgs/icon_demo.jpg'
+import { set as setGlobalData, get as getGlobalData } from '../../utils/globalData.js'
 
 // @connect(({ counter }) => ({
 //   counter
@@ -75,6 +76,7 @@ class Index extends Component {
   }
 
   renderUser() {
+    const userInfo = getGlobalData('userInfo')
     return (
       <View className='p-section-user'>
         <View className='u-head'>
@@ -85,19 +87,19 @@ class Index extends Component {
               size='huge'
             ></open-avatar>
           </View>
-          <View className='p-person-name'>彭于晏</View>
+          <View className='p-person-name'>{userInfo.name}</View>
         </View>
         <View className='u-body'>
           <View className='p-list-describe'>
             <View className='u-item'>
               <AtIcon value='iphone' color='#2eadb6'></AtIcon>
               <View className='u-name'>手机号码</View>
-              <View className='u-value'>15757179448</View>
+              <View className='u-value'>{userInfo.mobile}</View>
             </View>
             <View className='u-item'>
               <AtIcon value='shopping-bag' color='#2eadb6'></AtIcon>
-              <View className='u-name'>部门</View>
-              <View className='u-value'>技术部</View>
+              <View className='u-name'>身份</View>
+              <View className='u-value'>{userInfo.position}</View>
             </View>
           </View>
         </View>

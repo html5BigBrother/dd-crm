@@ -1,9 +1,11 @@
 import Taro, { Component } from '@tarojs/taro'
 import { View, Input, Button, Text, Navigator, Image } from '@tarojs/components'
 import { AtTabBar, AtIcon, AtButton } from 'taro-ui'
-
 import './login.styl'
+
+import { set as setGlobalData, get as getGlobalData } from '../../utils/globalData.js'
 import request from '../../utils/request'
+
 
 class Login extends Component {
 
@@ -44,6 +46,19 @@ class Login extends Component {
       bindLoading: true,
       loadingText: '登陆中',
       success: () => {
+        this.getUserInfo()
+      }
+    })
+  }
+
+  // 查询用户信息
+  getUserInfo() {
+    request.get({
+      url: '/leads/user/getUserInfo',
+      bindLoading: true,
+      loadingText: '登陆中',
+      success: (resData) => {
+        setGlobalData('userInfo', resData.data)
         Taro.navigateTo({ url: '/pages/index/index' })
       }
     })
