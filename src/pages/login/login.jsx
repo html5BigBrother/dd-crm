@@ -4,6 +4,7 @@ import { AtTabBar, AtIcon, AtButton } from 'taro-ui'
 import './login.styl'
 
 import { set as setGlobalData, get as getGlobalData } from '../../utils/globalData.js'
+import { serverPermissionCodes } from '../../utils/role'
 import request from '../../utils/request'
 
 
@@ -49,6 +50,45 @@ class Login extends Component {
         this.getUserInfo()
       }
     })
+  }
+
+  // 权限
+  verifyPermissions() {
+    let permissionCodes = []
+    for (let i in serverPermissionCodes) {
+      permissionCodes.push(i)
+    }
+
+    const needRequests = []
+    const resPermissions = {}
+    let permissions = getGlobalData('permissions') || {}
+    permissionCodes.forEach(item => {
+      if (!permissions[item]) {
+        needRequests.push(item)
+      } else {
+        resPermissions[item] = permissions[item]
+      }
+    })
+    if (needRequests.length > 0) {
+      request.post({
+        url: '/leads/user/getAuthList',
+        data:
+      })
+      const res = ajaxStore.common.verifyPermissions(needRequests)
+      if (res.data && res.data.code === '0') {
+        const ps = res.data.data
+        const permissions = state.permissions
+        ps.forEach(item => {
+          permissions[serverPermissionCodes[item.permissionCode]] = item.isEnable
+          resPermissions[serverPermissionCodes[item.permissionCode]] = item.isEnable
+        })
+        // console.log(resPermissions, ps)
+        commit('save', { permissions })
+        return resPermissions
+      }
+    } else {
+      return resPermissions
+    }
   }
 
   // 查询用户信息
