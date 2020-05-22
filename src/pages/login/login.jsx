@@ -72,9 +72,11 @@ class Login extends Component {
     if (needRequests.length > 0) {
       request.post({
         url: '/leads/user/getAuthList',
-        data:
+        data: JSON.stringify(needRequests),
+        success: () => {
+
+        }
       })
-      const res = ajaxStore.common.verifyPermissions(needRequests)
       if (res.data && res.data.code === '0') {
         const ps = res.data.data
         const permissions = state.permissions
