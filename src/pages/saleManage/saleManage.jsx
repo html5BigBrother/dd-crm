@@ -279,6 +279,7 @@ class Index extends Component {
   render () {
     const { current, isOpenedFloat, textValue, rangeDataLoser, rangeIndexLoser, rangeIndexNextDate, rangeIndexNextTime } = this.state
     const tabList = [{ title: '我的客户' }, { title: '公海' }]
+    const permissions = getGlobalData('permissions')
     return (
       <View className='p-page'>
         <View className='p-container'>
@@ -293,6 +294,12 @@ class Index extends Component {
           {/* 底部弹框 */}
           <AtFloatLayout isOpened={isOpenedFloat} onClose={this.onChangeIsOpenedFloat.bind(this, false)}>
             <View className='form-style'>
+              { permissions && permissions['LOG_MATURITY_DATA'] &&
+                <View className='form-item'>
+                  <View className='item-name'>成熟度</View>
+                  
+                </View>
+              }
               <View className='form-item'>
                 <View className='item-name'>是否战败</View>
                 <View className='item-content'>

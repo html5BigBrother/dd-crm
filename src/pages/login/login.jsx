@@ -47,7 +47,7 @@ class Login extends Component {
       bindLoading: true,
       loadingText: '登陆中',
       success: () => {
-        this.getUserInfo()
+        this.verifyPermissions()
       }
     })
   }
@@ -60,37 +60,23 @@ class Login extends Component {
     }
 
     const needRequests = []
-    const resPermissions = {}
-    let permissions = getGlobalData('permissions') || {}
+    // let permissions = getGlobalData('permissions') || {}
+    let permissions = {}
     permissionCodes.forEach(item => {
-      if (!permissions[item]) {
-        needRequests.push(item)
-      } else {
-        resPermissions[item] = permissions[item]
-      }
+      needRequests.push(item)
     })
-    if (needRequests.length > 0) {
-      request.post({
-        url: '/leads/user/getAuthList',
-        data: JSON.stringify(needRequests),
-        success: () => {
-
-        }
-      })
-      if (res.data && res.data.code === '0') {
-        const ps = res.data.data
-        const permissions = state.permissions
+    request.post({
+      url: '/leads/user/getAuthList',
+      data: JSON.stringify(needRequests),
+      success: (res) => {
+        const ps = res.data
         ps.forEach(item => {
           permissions[serverPermissionCodes[item.permissionCode]] = item.isEnable
-          resPermissions[serverPermissionCodes[item.permissionCode]] = item.isEnable
         })
-        // console.log(resPermissions, ps)
-        commit('save', { permissions })
-        return resPermissions
+        setGlobalData('permissions', permissions)
+        this.getUserInfo()
       }
-    } else {
-      return resPermissions
-    }
+    })
   }
 
   // 查询用户信息
