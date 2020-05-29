@@ -174,3 +174,15 @@ export const source = {
 export const mark = {
   1: '销售'
 }
+
+// 放弃原因
+export const giveUpReason = {
+  1: '无执照或执照注销',
+  2: '黑名单',
+  3: '风控红线',
+  4: '空号',
+  5: '用户硬性条件不符',
+  6: '无法确认KP',
+  7: '用户无意向',
+  8: '竞品'
+}

@@ -31,7 +31,8 @@ class App extends Component {
       'pages/login/login',
       'pages/index/index',
       'pages/doList/doList',
-      'pages/saleManage/saleManage'
+      'pages/saleManage/saleManage',
+      'pages/leadsDetail/leadsDetail'
     ],
     window: {
       backgroundTextStyle: 'light',

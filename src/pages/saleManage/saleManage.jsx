@@ -6,7 +6,7 @@ import './saleManage.styl'
 import { taskStatus, taskType, dealStatus, maturity, intentionDegree,
   normalSelect, secondarySalesWillingness, currentProgress, vipLevel,
   customerSource, leadType, companyType, registerSource, creditStatus,
-  source, mark
+  source, mark, giveUpReason
 } from '../../utils/enums'
 import { set as setGlobalData, get as getGlobalData } from '../../utils/globalData.js'
 import request from '../../utils/request'
@@ -31,15 +31,10 @@ class Index extends Component {
         pageSize: 10,
         menuSource: 0, // 菜单 公海
       },
-      rangeDataLoser: [
-        { key: '0', label: '否' },
-        { key: '1', label: '是' },
-      ],
-      rangeIndexLoser: 0,
-      rangeIndexNextDate: '',
-      rangeIndexNextTime: '',
       privateList: [],
-      publicList: []
+      publicList: [],
+      giveUpReasonRange: [],
+      giveUpReasonIndex: ''
     }
   }
 
@@ -68,6 +63,10 @@ class Index extends Component {
 
   onClickDaily() {
     this.setState({ isOpenedFloat: true })
+  }
+
+  onClickToDetail() {
+    Taro.navigateTo({ url: '/pages/leadsDetail/leadsDetail' })
   }
 
   onClickSelect(item) {
@@ -108,14 +107,6 @@ class Index extends Component {
 
   onChangeLoser(e) {
     this.setState({ rangeIndexLoser: e.detail.value })
-  }
-
-  onChangeNextDate(e) {
-    this.setState({ rangeIndexNextDate: e.detail.value })
-  }
-
-  onChangeNextTime(e) {
-    this.setState({ rangeIndexNextTime: e.detail.value })
   }
 
   initSearchFormPrivate () {
@@ -170,6 +161,7 @@ class Index extends Component {
 
   renderPrivateList() {
     const { privateList } = this.state
+    const permissions = getGlobalData('permissions')
     return (
       <View className='p-section-private'>
         <View className='p-list list-style-sheet'>
@@ -213,7 +205,10 @@ class Index extends Component {
                   <View>待跟进时间：{item.waitFollow || '-'}</View>
                 </View>
                 <View className='u-edit'>
-                  <AtButton className='u-btn-handle' type='secondary' size='small' onClick={this.onClickDaily.bind(this)}>填写跟踪日志</AtButton>
+                  <AtButton className='u-btn-handle' type='secondary' size='small' onClick={this.onClickToDetail.bind(this)}>查看详情</AtButton>
+                  { permissions && permissions["MY_GIVEUP_LEADS"] &&
+                    <AtButton className='u-btn-handle' type='secondary' size='small' onClick={this.onClickDaily.bind(this)}>放弃客户</AtButton>
+                  }
                 </View>
               </View>
             )
@@ -276,10 +271,49 @@ class Index extends Component {
     )
   }
 
-  render () {
-    const { current, isOpenedFloat, textValue, rangeDataLoser, rangeIndexLoser, rangeIndexNextDate, rangeIndexNextTime } = this.state
-    const tabList = [{ title: '我的客户' }, { title: '公海' }]
+  renderFloatLayout() {
+    const { isOpenedFloat, giveUpReasonRange, giveUpReasonIndex } = this.state
     const permissions = getGlobalData('permissions')
+    return (
+      <AtFloatLayout isOpened={isOpenedFloat} onClose={this.onChangeIsOpenedFloat.bind(this, false)}>
+        <View className='form-style'>
+          <View className='form-item'>
+            <View className='item-name'>是否战败</View>
+            <View className='item-content'>
+              <Picker
+                mode='selector'
+                range={giveUpReasonRange}
+                value={giveUpReasonIndex}
+                rangeKey='label'
+                onChange={this.onChangeLoser.bind(this)}
+              >
+                <View className='item-select'>
+                  <View className='flex-1'>{giveUpReasonRange[giveUpReasonIndex] ? giveUpReasonRange[giveUpReasonIndex].label : '请选择'}</View>
+                  <AtIcon value='chevron-right' color='rgba(0,0,0,0.3)'></AtIcon>
+                </View>
+              </Picker>
+            </View>
+          </View>
+          <View className='form-item'>
+            <View className='item-name'>跟踪日志</View>
+            <View className='item-content'>
+              <AtTextarea
+                count={false}
+                value={textValue}
+                placeholder='请填写跟踪日志'
+                maxLength={200}
+              ></AtTextarea>
+            </View>
+          </View>
+        </View>
+        <AtButton className='p-btn-submit' type='primary'>提交</AtButton>
+      </AtFloatLayout>
+    )
+  }
+
+  render () {
+    const { current } = this.state
+    const tabList = [{ title: '我的客户' }, { title: '公海' }]
     return (
       <View className='p-page'>
         <View className='p-container'>
@@ -292,56 +326,7 @@ class Index extends Component {
             </AtTabsPane>
           </AtTabs>
           {/* 底部弹框 */}
-          <AtFloatLayout isOpened={isOpenedFloat} onClose={this.onChangeIsOpenedFloat.bind(this, false)}>
-            <View className='form-style'>
-              { permissions && permissions['LOG_MATURITY_DATA'] &&
-                <View className='form-item'>
-                  <View className='item-name'>成熟度</View>
-                  
-                </View>
-              }
-              <View className='form-item'>
-                <View className='item-name'>是否战败</View>
-                <View className='item-content'>
-                  <Picker mode='selector' range={rangeDataLoser} value={rangeIndexLoser} rangeKey='label' onChange={this.onChangeLoser.bind(this)}>
-                    <View className='item-select'>
-                      <View className='flex-1'>{rangeDataLoser[rangeIndexLoser] ? rangeDataLoser[rangeIndexLoser].label : '请选择'}</View>
-                      <AtIcon value='chevron-right' color='rgba(0,0,0,0.3)'></AtIcon>
-                    </View>
-                  </Picker>
-                </View>
-              </View>
-              <View className='form-item'>
-                <View className='item-name'>跟踪日志</View>
-                <View className='item-content'>
-                  <AtTextarea
-                    count={false}
-                    value={textValue}
-                    placeholder='请填写跟踪日志'
-                    maxLength={200}
-                  ></AtTextarea>
-                </View>
-              </View>
-              <View className='form-item'>
-                <View className='item-name'>约定下次沟通时间</View>
-                <View className='item-content'>
-                  <Picker mode='date' value={rangeIndexNextDate} onChange={this.onChangeNextDate.bind(this)}>
-                    <View className='item-select'>
-                      <View className='flex-1'>{rangeIndexNextDate ? rangeIndexNextDate : '请选择下次沟通日期'}</View>
-                      <AtIcon value='chevron-right' color='rgba(0,0,0,0.3)'></AtIcon>
-                    </View>
-                  </Picker>
-                  <Picker mode='time' value={rangeIndexNextTime} onChange={this.onChangeNextTime.bind(this)}>
-                    <View className='item-select'>
-                      <View className='flex-1'>{rangeIndexNextTime ? rangeIndexNextTime : '请选择下次沟通时间'}</View>
-                      <AtIcon value='chevron-right' color='rgba(0,0,0,0.3)'></AtIcon>
-                    </View>
-                  </Picker>
-                </View>
-              </View>
-            </View>
-            <AtButton className='p-btn-submit' type='primary'>提交</AtButton>
-          </AtFloatLayout>
+          { this.renderFloatLayout() }
         </View>
       </View>
     )
