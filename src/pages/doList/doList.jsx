@@ -98,6 +98,10 @@ class Index extends Component {
     })
   }
 
+  onChangeTextarea(e) {
+    this.setState({ textValue: e.detail.value })
+  }
+
   onChangeIsOpenedFloat(isOpened) {
     const isOpenedFloat = isOpened
     this.setState({ isOpenedFloat })
@@ -263,6 +267,7 @@ class Index extends Component {
                     value={textValue}
                     placeholder='请填写处理结果'
                     maxLength={50}
+                    onChange={this.onChangeTextarea.bind(this)}
                   ></AtTextarea>
                 </View>
               </View>

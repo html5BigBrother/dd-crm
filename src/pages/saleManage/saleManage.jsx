@@ -8,6 +8,7 @@ import { taskStatus, taskType, dealStatus, maturity, intentionDegree,
   customerSource, leadType, companyType, registerSource, creditStatus,
   source, mark, giveUpReason
 } from '../../utils/enums'
+import { navigateTo } from '../../utils/util'
 import { set as setGlobalData, get as getGlobalData } from '../../utils/globalData.js'
 import request from '../../utils/request'
 
@@ -34,11 +35,14 @@ class Index extends Component {
       privateList: [],
       publicList: [],
       giveUpReasonRange: [],
-      giveUpReasonIndex: ''
+      giveUpReasonIndex: '',
+      giveUpReasonText: '',
+      currentId: ''
     }
   }
 
   componentDidMount() {
+    this.resetRange()
     this.switchCurrent()
   }
 
@@ -61,12 +65,17 @@ class Index extends Component {
     this.switchCurrent(value)
   }
 
-  onClickDaily() {
-    this.setState({ isOpenedFloat: true })
+  onClickGiveUp(item) {
+    this.setState({
+      isOpenedFloat: true,
+      giveUpReasonIndex: '',
+      giveUpReasonText: '',
+      currentId: item.id
+    })
   }
 
-  onClickToDetail() {
-    Taro.navigateTo({ url: '/pages/leadsDetail/leadsDetail' })
+  onClickToDetail(item) {
+    navigateTo('/pages/leadsDetail/leadsDetail', { id: item.id })
   }
 
   onClickSelect(item) {
@@ -100,13 +109,39 @@ class Index extends Component {
     }
   }
 
+  // 放弃客户
+  onClickSubmit() {
+    const { currentId, giveUpReasonRange, giveUpReasonIndex, giveUpReasonText } = this.state
+    const data = {
+      circulationSource: 7,
+      leadsId: [currentId],
+      reason: giveUpReasonRange[giveUpReasonIndex].key,
+      remark: giveUpReasonText
+    }
+    request.post({
+      url: '/leads/leads/giveUpLeads',
+      data: JSON.stringify(data),
+      bindLoading: true,
+      loadingText: '加载中',
+      success: () => {
+        Taro.showToast({ title: '成功' })
+        this.onChangeIsOpenedFloat(false)
+        this.switchCurrent()
+      }
+    })
+  }
+
+  onChangeTextarea(e) {
+    this.setState({ giveUpReasonText: e.detail.value })
+  }
+
   onChangeIsOpenedFloat(isOpened) {
     const isOpenedFloat = isOpened
     this.setState({ isOpenedFloat })
   }
 
   onChangeLoser(e) {
-    this.setState({ rangeIndexLoser: e.detail.value })
+    this.setState({ giveUpReasonIndex: e.detail.value })
   }
 
   initSearchFormPrivate () {
@@ -119,6 +154,16 @@ class Index extends Component {
     searchFormPrivate.salesmanMemId = userInfo.memberId
     
     return searchFormPrivate
+  }
+
+  resetRange() {
+    // 放弃原因
+    let giveUpReasonRange = []
+    for(let i in giveUpReason) {
+      giveUpReasonRange.push({ key: i, label: giveUpReason[i] })
+    }
+
+    this.setState({ giveUpReasonRange })
   }
 
   switchCurrent(value) {
@@ -172,42 +217,42 @@ class Index extends Component {
                   <View className='sheet-item-title'>企业名称：{item.companyName}</View>
                   <View>leadsId：{item.id}</View>
                   <View>成熟度：{maturity[item.maturity]}</View>
-                  <View>工单类型：{taskType[item.taskType]}</View>
-                  <View>意向程度：{intentionDegree[item.intentionDegree]}</View>
+                  {/* <View>工单类型：{taskType[item.taskType]}</View> */}
+                  {/* <View>意向程度：{intentionDegree[item.intentionDegree]}</View> */}
                   <View>是否战败：{normalSelect[item.isLoser]}</View>
-                  <View>二次销售意愿度：{secondarySalesWillingness[item.secondarySalesWillingness]}</View>
+                  {/* <View>二次销售意愿度：{secondarySalesWillingness[item.secondarySalesWillingness]}</View> */}
                   <View>当前进度：{currentProgress[item.currentProgress]}</View>
                   <View>最近联系时间：{item.lastContactTime}</View>
                   <View>最近一次获得客户时间：{item.lastGetCustomersTime}</View>
                   <View>会员等级：{item.userId ? vipLevel[item.vipLevel] : '-'}</View>
-                  <View>客户来源：{customerSource[item.customerSource]}</View>
+                  {/* <View>客户来源：{customerSource[item.customerSource]}</View> */}
                   <View>所在地区：{`${item.provinceName} - ${item.cityName} - ${item.areaName}`}</View>
-                  <View>客户属性：{leadType[item.leadType]}</View>
-                  <View>客户类型：{companyType[item.companyType]}</View>
-                  <View>是否注册：{item.hasRegister ? '是' : '否'}</View>
+                  {/* <View>客户属性：{leadType[item.leadType]}</View> */}
+                  {/* <View>客户类型：{companyType[item.companyType]}</View> */}
+                  {/* <View>是否注册：{item.hasRegister ? '是' : '否'}</View>
                   <View>注册手机号：{item.registerPhone}</View>
                   <View>注册来源：{registerSource[item.registerSource]}</View>
-                  <View>注册时间：{item.registerTime}</View>
-                  <View>是否已实名：{item.hasRealName ? '是' : '否'}</View>
-                  <View>当前是否有赊销：{item.hasCreditGranting ? '是' : '否'}</View>
+                  <View>注册时间：{item.registerTime}</View> */}
+                  {/* <View>是否已实名：{item.hasRealName ? '是' : '否'}</View> */}
+                  {/* <View>当前是否有赊销：{item.hasCreditGranting ? '是' : '否'}</View> */}
                   <View>赊销状态：{item.creditStatus === 'INVALID' ? item.creditSleep === '1' ? '休眠' : '失效' : (creditStatus[item.creditStatus] || '-')}</View>
-                  <View>赊销额度生效时间：{item.gmtCreditChecked}</View>
-                  <View>是否完成首次支付货款：{item.hasLoan ? '是' : '否'}</View>
-                  <View>首次支付货款时间：{item.gmtLoan}</View>
-                  <View>当前跟进电销：{item.electricitySaler ? `${item.electricitySaler.department}-${item.electricitySaler.name}(${item.electricitySaler.jobNumber})` : '-'}</View>
-                  <View>当前跟进业务员：{item.salesman ? `${item.salesman.department}-${item.salesman.name}(${item.salesman.jobNumber})` : '-'}</View>
-                  <View>当前跟进客服：{item.customerService ? `${item.customerService.department}-${item.customerService.name}(${item.customerService.jobNumber})` : '-'}</View>
+                  {/* <View>赊销额度生效时间：{item.gmtCreditChecked}</View> */}
+                  {/* <View>是否完成首次支付货款：{item.hasLoan ? '是' : '否'}</View> */}
+                  {/* <View>首次支付货款时间：{item.gmtLoan}</View> */}
+                  {/* <View>当前跟进电销：{item.electricitySaler ? `${item.electricitySaler.department}-${item.electricitySaler.name}(${item.electricitySaler.jobNumber})` : '-'}</View> */}
+                  {/* <View>当前跟进业务员：{item.salesman ? `${item.salesman.department}-${item.salesman.name}(${item.salesman.jobNumber})` : '-'}</View> */}
+                  {/* <View>当前跟进客服：{item.customerService ? `${item.customerService.department}-${item.customerService.name}(${item.customerService.jobNumber})` : '-'}</View> */}
                   <View>leads来源：{item.channelName ? item.channelName : source[item.source]}</View>
-                  <View>任务名称：{item.whiteTaskName || '-'}</View>
+                  {/* <View>任务名称：{item.whiteTaskName || '-'}</View> */}
                   {/* <View>渠道名称：{}</View> */}
-                  <View>leads创建时间：{item.gmtCreated}</View>
-                  <View>标记：{mark[item.mark]}</View>
-                  <View>待跟进时间：{item.waitFollow || '-'}</View>
+                  {/* <View>leads创建时间：{item.gmtCreated}</View> */}
+                  {/* <View>标记：{mark[item.mark]}</View> */}
+                  {/* <View>待跟进时间：{item.waitFollow || '-'}</View> */}
                 </View>
                 <View className='u-edit'>
-                  <AtButton className='u-btn-handle' type='secondary' size='small' onClick={this.onClickToDetail.bind(this)}>查看详情</AtButton>
+                  <AtButton className='u-btn-handle' type='secondary' size='small' onClick={this.onClickToDetail.bind(this, item)}>查看详情</AtButton>
                   { permissions && permissions["MY_GIVEUP_LEADS"] &&
-                    <AtButton className='u-btn-handle' type='secondary' size='small' onClick={this.onClickDaily.bind(this)}>放弃客户</AtButton>
+                    <AtButton className='u-btn-handle' type='secondary' size='small' onClick={this.onClickGiveUp.bind(this, item)}>放弃客户</AtButton>
                   }
                 </View>
               </View>
@@ -230,35 +275,35 @@ class Index extends Component {
                 <View className='sheet-item-title'>企业名称：{item.companyName}</View>
                   <View>leadsId：{item.id}</View>
                   <View>成熟度：{maturity[item.maturity]}</View>
-                  <View>工单类型：{taskType[item.taskType]}</View>
-                  <View>意向程度：{intentionDegree[item.intentionDegree]}</View>
+                  {/* <View>工单类型：{taskType[item.taskType]}</View>
+                  <View>意向程度：{intentionDegree[item.intentionDegree]}</View> */}
                   <View>是否战败：{normalSelect[item.isLoser]}</View>
-                  <View>二次销售意愿度：{secondarySalesWillingness[item.secondarySalesWillingness]}</View>
+                  {/* <View>二次销售意愿度：{secondarySalesWillingness[item.secondarySalesWillingness]}</View> */}
                   <View>当前进度：{currentProgress[item.currentProgress]}</View>
                   <View>最近联系时间：{item.lastContactTime}</View>
                   <View>最近一次获得客户时间：{item.lastGetCustomersTime}</View>
                   <View>会员等级：{item.userId ? vipLevel[item.vipLevel] : '-'}</View>
-                  <View>客户来源：{customerSource[item.customerSource]}</View>
+                  {/* <View>客户来源：{customerSource[item.customerSource]}</View> */}
                   <View>所在地区：{`${item.provinceName} - ${item.cityName} - ${item.areaName}`}</View>
-                  <View>客户属性：{leadType[item.leadType]}</View>
+                  {/* <View>客户属性：{leadType[item.leadType]}</View>
                   <View>客户类型：{companyType[item.companyType]}</View>
                   <View>是否注册：{item.hasRegister ? '是' : '否'}</View>
                   <View>注册手机号：{item.registerPhone}</View>
                   <View>注册来源：{registerSource[item.registerSource]}</View>
                   <View>注册时间：{item.registerTime}</View>
                   <View>是否已实名：{item.hasRealName ? '是' : '否'}</View>
-                  <View>当前是否有赊销：{item.hasCreditGranting ? '是' : '否'}</View>
+                  <View>当前是否有赊销：{item.hasCreditGranting ? '是' : '否'}</View> */}
                   <View>赊销状态：{item.creditStatus === 'INVALID' ? item.creditSleep === '1' ? '休眠' : '失效' : (creditStatus[item.creditStatus] || '-')}</View>
-                  <View>赊销额度生效时间：{item.gmtCreditChecked}</View>
+                  {/* <View>赊销额度生效时间：{item.gmtCreditChecked}</View>
                   <View>是否完成首次支付货款：{item.hasLoan ? '是' : '否'}</View>
                   <View>首次支付货款时间：{item.gmtLoan}</View>
                   <View>当前跟进电销：{item.electricitySaler ? `${item.electricitySaler.department}-${item.electricitySaler.name}(${item.electricitySaler.jobNumber})` : '-'}</View>
                   <View>当前跟进业务员：{item.salesman ? `${item.salesman.department}-${item.salesman.name}(${item.salesman.jobNumber})` : '-'}</View>
-                  <View>当前跟进客服：{item.customerService ? `${item.customerService.department}-${item.customerService.name}(${item.customerService.jobNumber})` : '-'}</View>
+                  <View>当前跟进客服：{item.customerService ? `${item.customerService.department}-${item.customerService.name}(${item.customerService.jobNumber})` : '-'}</View> */}
                   <View>leads来源：{item.channelName ? item.channelName : source[item.source]}</View>
-                  <View>任务名称：{item.whiteTaskName || '-'}</View>
+                  {/* <View>任务名称：{item.whiteTaskName || '-'}</View> */}
                   {/* <View>渠道名称：{}</View> */}
-                  <View>leads创建时间：{item.gmtCreated}</View>
+                  {/* <View>leads创建时间：{item.gmtCreated}</View> */}
                 </View>
                 <View className='u-edit'>
                   <AtButton className='u-btn-handle' type='secondary' size='small' onClick={this.onClickSelect.bind(this, item)}>挑入</AtButton>
@@ -272,13 +317,12 @@ class Index extends Component {
   }
 
   renderFloatLayout() {
-    const { isOpenedFloat, giveUpReasonRange, giveUpReasonIndex } = this.state
-    const permissions = getGlobalData('permissions')
+    const { isOpenedFloat, giveUpReasonRange, giveUpReasonIndex, giveUpReasonText } = this.state
     return (
       <AtFloatLayout isOpened={isOpenedFloat} onClose={this.onChangeIsOpenedFloat.bind(this, false)}>
         <View className='form-style'>
           <View className='form-item'>
-            <View className='item-name'>是否战败</View>
+            <View className='item-name'>放弃原因</View>
             <View className='item-content'>
               <Picker
                 mode='selector'
@@ -295,18 +339,19 @@ class Index extends Component {
             </View>
           </View>
           <View className='form-item'>
-            <View className='item-name'>跟踪日志</View>
+            <View className='item-name'>备注</View>
             <View className='item-content'>
               <AtTextarea
                 count={false}
-                value={textValue}
-                placeholder='请填写跟踪日志'
+                value={giveUpReasonText}
+                placeholder='请说明原因'
                 maxLength={200}
+                onChange={this.onChangeTextarea.bind(this)}
               ></AtTextarea>
             </View>
           </View>
         </View>
-        <AtButton className='p-btn-submit' type='primary'>提交</AtButton>
+        <AtButton className='p-btn-submit' type='primary' onClick={this.onClickSubmit.bind(this)}>提交</AtButton>
       </AtFloatLayout>
     )
   }
