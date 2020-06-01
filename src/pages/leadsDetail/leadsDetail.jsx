@@ -1,6 +1,6 @@
 import Taro, { Component } from '@tarojs/taro'
 import { View, Button, Text, Navigator, Image, Picker } from '@tarojs/components'
-import { AtButton, AtFloatLayout, AtTextarea, AtIcon, AtAccordion, AtMessage } from 'taro-ui'
+import { AtButton, AtFloatLayout, AtTextarea, AtIcon, AtAccordion, AtMessage, AtPagination } from 'taro-ui'
 import './leadsDetail.styl'
 
 import validate from '../../utils/validate'
@@ -24,6 +24,7 @@ class Index extends Component {
         createrType: 2,
         descs: 'gmt_created'
       },
+      pageTotal: 0,
       form: {
         leadsId: '',
         maturity: null, // 成熟度
@@ -147,6 +148,12 @@ class Index extends Component {
     })
   }
 
+  // 客户经理跟踪日志分页
+  onPageChange(e) {
+    const { type, current } = e
+    this.getLogList(current)
+  }
+
   resetRange() {
     const { oldMaturity } = this.state
     // 成熟度
@@ -222,15 +229,22 @@ class Index extends Component {
   }
 
   // 查询历史客户经理跟踪日志
-  getLogList() {
+  getLogList(pageNo) {
     const data = this.state.searchForm
+    if (pageNo) data.pageNo = pageNo
     request.get({
       url: '/leads/leads/log/getLogList',
       data: data,
       bindLoading: true,
       loadingText: '加载中',
       success: (resData) => {
-        this.setState({ logList: resData.data.pagedRecords })
+        let { searchForm } = this.state
+        searchForm.pageNo = resData.data.pageNo
+        this.setState({
+          logList: resData.data.pagedRecords,
+          pageTotal: resData.data.totalCount,
+          searchForm,
+        })
       }
     })
   }
@@ -261,28 +275,37 @@ class Index extends Component {
 
   // 跟踪日志
   renderRecord() {
-    const { logList } = this.state
+    const { logList, pageTotal, searchForm } = this.state
     return (
-      <View className='p-log-list list-style-sheet'>
-        {
-          logList && logList.length > 0 ?
-            logList.map((item) =>
-              item.type === 0 &&
-                <View className='sheet-item' key={item.id}>
-                  <View className='sheet-item-content'>
-                    <View>录入人：{item.createrMemId}</View>
-                    { maturity[item.maturity] && <View>成熟度：{maturity[item.maturity]}</View> }
-                    { secondarySalesWillingness[item.secondarySalesWillingness] && <View>二次销售意愿度：{secondarySalesWillingness[item.secondarySalesWillingness]}</View> }
-                    { item.content && <View>追踪日志：{item.content}</View> }
-                    { intentionDegree[item.intentionDegree] && <View>意向程度：{intentionDegree[item.intentionDegree]}</View> }
-                    { normalSelect[item.isLoser] && <View>是否战败：{normalSelect[item.isLoser]}</View> }
-                    { item.nextCommunicationTime && <View>约定下次沟通时间：{item.nextCommunicationTime}</View> }
-                    { item.gmtCreated && <View>创建时间：{item.gmtCreated}</View> }
+      <View className='p-log-list'>
+        <View className='list-style-sheet'>
+          {
+            logList && logList.length > 0 ?
+              logList.map((item) =>
+                item.type === 0 &&
+                  <View className='sheet-item' key={item.id}>
+                    <View className='sheet-item-content'>
+                      <View>录入人：{item.createrMemId}</View>
+                      { maturity[item.maturity] && <View>成熟度：{maturity[item.maturity]}</View> }
+                      { secondarySalesWillingness[item.secondarySalesWillingness] && <View>二次销售意愿度：{secondarySalesWillingness[item.secondarySalesWillingness]}</View> }
+                      { item.content && <View>追踪日志：{item.content}</View> }
+                      { intentionDegree[item.intentionDegree] && <View>意向程度：{intentionDegree[item.intentionDegree]}</View> }
+                      { normalSelect[item.isLoser] && <View>是否战败：{normalSelect[item.isLoser]}</View> }
+                      { item.nextCommunicationTime && <View>约定下次沟通时间：{item.nextCommunicationTime}</View> }
+                      { item.gmtCreated && <View>创建时间：{item.gmtCreated}</View> }
+                    </View>
                   </View>
-                </View>
-            ) :
-            <View className='u-empty'>暂无数据</View>
-        }
+              ) :
+              <View className='u-empty'>暂无数据</View>
+          }
+        </View>
+        <AtPagination
+          total={pageTotal}
+          pageSize={searchForm.pageSize}
+          current={searchForm.pageNo}
+          icon
+          onPageChange={this.onPageChange.bind(this)}
+        ></AtPagination>
       </View>
     )
   }
@@ -405,7 +428,7 @@ class Index extends Component {
   }
 
   render () {
-    const { openBaseInfo, openRecord, logList } = this.state
+    const { openBaseInfo, openRecord } = this.state
     return (
       <View className='p-page'>
         <AtMessage />

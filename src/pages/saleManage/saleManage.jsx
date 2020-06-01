@@ -375,7 +375,7 @@ class Index extends Component {
       <View className='p-page'>
         <AtMessage />
         <View className='p-container'>
-          <AtTabs current={current} tabList={tabList} onClick={this.onClickTab.bind(this)}>
+          <AtTabs current={current} tabList={tabList} swipeable={false} onClick={this.onClickTab.bind(this)}>
             <AtTabsPane current={current} index={0}>
               { this.renderPrivateList() }
             </AtTabsPane>
