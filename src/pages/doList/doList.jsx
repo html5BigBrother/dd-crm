@@ -48,7 +48,7 @@ class Index extends Component {
       rangeData.push({ key: i, label: dealStatus[i] })
     }
     this.setState({ rangeData })
-    this.switchCurrent()
+    this.switchCurrent(this.state.current)
   }
 
   componentWillReceiveProps (nextProps) {
@@ -62,7 +62,7 @@ class Index extends Component {
   componentDidHide () { }
 
   onReachBottom() {
-
+    
   }
 
   config = {}
@@ -84,7 +84,7 @@ class Index extends Component {
   }
 
   onClickSubmit() {
-    const { currentId, rangeData, rangeIndex, textValue } = this.state
+    const { current, currentId, rangeData, rangeIndex, textValue } = this.state
     const data = {
       dealStatus: rangeData[rangeIndex].key,
       id: currentId,
@@ -109,7 +109,7 @@ class Index extends Component {
       success: () => {
         Taro.showToast({ title: '成功' })
         this.onChangeIsOpenedFloat(false)
-        this.switchCurrent()
+        this.switchCurrent(current)
       }
     })
   }
@@ -147,9 +147,7 @@ class Index extends Component {
     return searchFormDone
   }
 
-  switchCurrent(value) {
-    debugger
-    const current = value || this.state.current
+  switchCurrent(current) {
     switch (current) {
       case 0:
         this.getLeadsListTodo()
