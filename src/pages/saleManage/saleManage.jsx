@@ -1,8 +1,9 @@
 import Taro, { Component } from '@tarojs/taro'
 import { View, Button, Text, Navigator, Image, Picker } from '@tarojs/components'
-import { AtTabs, AtTabsPane, AtButton, AtFloatLayout, AtTextarea, AtIcon } from 'taro-ui'
+import { AtTabs, AtTabsPane, AtButton, AtFloatLayout, AtTextarea, AtIcon, AtMessage } from 'taro-ui'
 import './saleManage.styl'
 
+import validate from '../../utils/validate'
 import { taskStatus, taskType, dealStatus, maturity, intentionDegree,
   normalSelect, secondarySalesWillingness, currentProgress, vipLevel,
   customerSource, leadType, companyType, registerSource, creditStatus,
@@ -118,6 +119,17 @@ class Index extends Component {
       reason: giveUpReasonRange[giveUpReasonIndex].key,
       remark: giveUpReasonText
     }
+
+    const vRes = validate([
+      { type: 'vEmpty', value: data.reason, msg: '请选择放弃原因' },
+      { type: 'vEmpty', value: data.remark, msg: '请填写备注' },
+    ])
+
+    if (vRes !== true) {
+      Taro.atMessage({ 'message': vRes, 'type': 'error', })
+      return
+    }
+
     request.post({
       url: '/leads/leads/giveUpLeads',
       data: JSON.stringify(data),
@@ -250,7 +262,7 @@ class Index extends Component {
                   {/* <View>待跟进时间：{item.waitFollow || '-'}</View> */}
                 </View>
                 <View className='u-edit'>
-                  <AtButton className='u-btn-handle' type='secondary' size='small' onClick={this.onClickToDetail.bind(this, item)}>查看详情</AtButton>
+                  <AtButton className='u-btn-handle' type='secondary' size='small' onClick={this.onClickToDetail.bind(this, item)}>跟踪日志</AtButton>
                   { permissions && permissions["MY_GIVEUP_LEADS"] &&
                     <AtButton className='u-btn-handle' type='secondary' size='small' onClick={this.onClickGiveUp.bind(this, item)}>放弃客户</AtButton>
                   }
@@ -361,6 +373,7 @@ class Index extends Component {
     const tabList = [{ title: '我的客户' }, { title: '公海' }]
     return (
       <View className='p-page'>
+        <AtMessage />
         <View className='p-container'>
           <AtTabs current={current} tabList={tabList} onClick={this.onClickTab.bind(this)}>
             <AtTabsPane current={current} index={0}>

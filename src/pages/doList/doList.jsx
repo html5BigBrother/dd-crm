@@ -1,8 +1,9 @@
 import Taro, { Component } from '@tarojs/taro'
 import { View, Button, Text, Navigator, Image, Picker } from '@tarojs/components'
-import { AtTabs, AtTabsPane, AtButton, AtFloatLayout, AtTextarea, AtIcon } from 'taro-ui'
+import { AtTabs, AtTabsPane, AtButton, AtFloatLayout, AtTextarea, AtIcon, AtMessage } from 'taro-ui'
 import './doList.styl'
 
+import validate from '../../utils/validate'
 import { taskStatus, taskType, dealStatus } from '../../utils/enums'
 import { set as setGlobalData, get as getGlobalData } from '../../utils/globalData.js'
 import request from '../../utils/request'
@@ -85,6 +86,17 @@ class Index extends Component {
       id: currentId,
       processResult: textValue
     }
+
+    const vRes = validate([
+      { type: 'vEmpty', value: data.dealStatus, msg: '请选择处理状态' },
+      { type: 'vEmpty', value: data.processResult, msg: '请填写处理结果' },
+    ])
+
+    if (vRes !== true) {
+      Taro.atMessage({ 'message': vRes, 'type': 'error', })
+      return
+    }
+
     request.post({
       url: '/leads/tasks/process',
       data: JSON.stringify(data),
@@ -237,6 +249,7 @@ class Index extends Component {
     const tabList = [{ title: '我的待办' }, { title: '我的办结' }]
     return (
       <View className='p-page'>
+        <AtMessage />
         <View className='p-container'>
           <AtTabs current={current} tabList={tabList} onClick={this.onClickTab.bind(this)}>
             <AtTabsPane current={current} index={0}>

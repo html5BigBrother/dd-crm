@@ -103,7 +103,7 @@ function doAjax({ method, url, contentType = 'json', data, loadingText, success,
         success && success(responseData)
       } else {
         if (!fail) {
-          showModalError({ content: data.message })
+          showModalError({ content: responseData.message })
         } else {
           fail(responseData)
         }

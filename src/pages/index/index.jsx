@@ -8,6 +8,7 @@ import { add, minus, asyncAdd } from '../../actions/counter'
 import './index.styl'
 
 import icon_demo from '../../static/imgs/icon_demo.jpg'
+import icon_avatar from '../../static/imgs/icon_avatar.svg'
 import { set as setGlobalData, get as getGlobalData } from '../../utils/globalData.js'
 
 // @connect(({ counter }) => ({
@@ -30,8 +31,8 @@ class Index extends Component {
     this.state = {
       current: 0,
       menuOptions: [
-        { text: '工作台', icon: icon_demo, url: '/pages/doList/doList' },
-        { text: '销售管理', icon: icon_demo, url: '/pages/saleManage/saleManage' },
+        { text: '工作台', iconName: 'bullet-list', url: '/pages/doList/doList' },
+        { text: '销售管理', iconName: 'shopping-bag', url: '/pages/saleManage/saleManage' },
       ]
     }
   }
@@ -64,7 +65,8 @@ class Index extends Component {
             {
               menuOptions.map((item) =>
                 <Navigator className='u-menu-item' hoverClass='u-menu-item-hover' url={item.url} key={item.text}>
-                  <Image className='u-menu-icon' src={icon_demo}></Image>
+                  {/* <Image className='u-menu-icon' src={icon_demo}></Image> */}
+                  <AtIcon className='u-menu-icon' value={item.iconName} size='30' color='#2eadb6'></AtIcon>
                   <View className='u-menu-text'>{item.text}</View>
                 </Navigator>
               )
@@ -82,8 +84,8 @@ class Index extends Component {
         <View className='u-head'>
           <View className='p-avatar'>
             <open-avatar
-              nickName='你好'
-              avatar={icon_demo}
+              nickName='.'
+              avatar={icon_avatar}
               size='huge'
             ></open-avatar>
           </View>
@@ -97,7 +99,7 @@ class Index extends Component {
               <View className='u-value'>{userInfo.mobile}</View>
             </View>
             <View className='u-item'>
-              <AtIcon value='shopping-bag' color='#2eadb6'></AtIcon>
+              <AtIcon value='user' color='#2eadb6'></AtIcon>
               <View className='u-name'>身份</View>
               <View className='u-value'>{userInfo.position}</View>
             </View>

@@ -1,8 +1,10 @@
 import Taro, { Component } from '@tarojs/taro'
 import { View, Input, Button, Text, Navigator, Image } from '@tarojs/components'
-import { AtTabBar, AtIcon, AtButton } from 'taro-ui'
+import { AtTabBar, AtIcon, AtButton, AtMessage } from 'taro-ui'
 import './login.styl'
 
+import validate from '../../utils/validate'
+import { showModalError } from '../../utils/util'
 import { set as setGlobalData, get as getGlobalData } from '../../utils/globalData.js'
 import { serverPermissionCodes } from '../../utils/role'
 import request from '../../utils/request'
@@ -41,6 +43,17 @@ class Login extends Component {
       username: this.state.username,
       password: this.state.password
     })
+
+    const vRes = validate([
+      { type: 'vEmpty', value: this.state.username, msg: '请输入用户名' },
+      { type: 'vEmpty', value: this.state.password, msg: '请输入密码' },
+    ])
+
+    if (vRes !== true) {
+      Taro.atMessage({ 'message': vRes, 'type': 'error', })
+      return
+    }
+
     request.post({
       url: '/leads/user/login',
       data,
@@ -86,6 +99,12 @@ class Login extends Component {
       bindLoading: true,
       loadingText: '登陆中',
       success: (resData) => {
+        if (resData.data.position !== '客户经理') {
+          showModalError({
+            content: '移动端目前只支持客户经理登录，请重新输入账号密码'
+          })
+          return
+        }
         setGlobalData('userInfo', resData.data)
         Taro.navigateTo({ url: '/pages/index/index' })
       }
@@ -96,6 +115,7 @@ class Login extends Component {
     const { username, password, loading } = this.state
     return (
       <View className='p-page'>
+        <AtMessage />
         <View className='p-container'>
           <View className='p-form-box'>
             <View className='p-input-wrap'>

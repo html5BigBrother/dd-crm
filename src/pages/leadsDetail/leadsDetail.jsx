@@ -1,8 +1,9 @@
 import Taro, { Component } from '@tarojs/taro'
 import { View, Button, Text, Navigator, Image, Picker } from '@tarojs/components'
-import { AtButton, AtFloatLayout, AtTextarea, AtIcon, AtAccordion  } from 'taro-ui'
+import { AtButton, AtFloatLayout, AtTextarea, AtIcon, AtAccordion, AtMessage } from 'taro-ui'
 import './leadsDetail.styl'
 
+import validate from '../../utils/validate'
 import { taskStatus, taskType, dealStatus, maturity, intentionDegree,
   normalSelect, secondarySalesWillingness, currentProgress, vipLevel,
   customerSource, leadType, companyType, registerSource, creditStatus,
@@ -16,6 +17,13 @@ class Index extends Component {
   constructor (props) {
     super(props)
     this.state = {
+      searchForm: {
+        pageNo: 1,
+        pageSize: 10,
+        leadsId: '',
+        createrType: 2,
+        descs: 'gmt_created'
+      },
       form: {
         leadsId: '',
         maturity: null, // 成熟度
@@ -29,6 +37,7 @@ class Index extends Component {
       openRecord: true, // 客户经理跟踪日志显示
       isOpenedFloat: false, // 填写跟踪日志显示
       detailInfo: {}, // 请求到的详情数据
+      logList: [], // 客户经理历史跟踪日志
       maturityRange: [], // 成熟度
       maturityIndex: '',
       normalSelectRange: [], // 是否战败
@@ -37,18 +46,19 @@ class Index extends Component {
       secondarySalesWillingnessIndex: '',
       intentionDegreeRange: [], // 意向程度
       intentionDegreeIndex: '',
-      rangeIndexNextDate: '',
       rangeIndexNextTime: '',
     }
   }
 
   componentDidMount() {
-    const { form } = this.state
+    const { form, searchForm } = this.state
     form.leadsId = this.$router.params.id
-    this.setState({ form })
+    searchForm.leadsId = this.$router.params.id
+    this.setState({ form, searchForm })
 
     this.resetRange()
     this.getDetail()
+    this.getLogList()
   }
 
   componentWillReceiveProps (nextProps) {
@@ -108,11 +118,6 @@ class Index extends Component {
     this.setState({ form })
   }
 
-  // 下次日期
-  onChangeNextDate(e) {
-    this.setState({ rangeIndexNextDate: e.detail.value })
-  }
-
   // 下次时间
   onChangeNextTime(e) {
     this.setState({ rangeIndexNextTime: e.detail.value })
@@ -137,6 +142,7 @@ class Index extends Component {
       success: () => {
         Taro.showToast({ title: '成功' })
         this.onChangeIsOpenedFloat(false)
+        this.getLogList()
       }
     })
   }
@@ -176,13 +182,11 @@ class Index extends Component {
 
   initParams () {
     const permissions = getGlobalData('permissions')
-    const { rangeIndexNextDate, rangeIndexNextTime } = this.state
+    const { rangeIndexNextTime } = this.state
     let data = this.state.form
     let params = {}
 
-    if (rangeIndexNextDate && rangeIndexNextTime) {
-      data.nextCommunicationTime = `${rangeIndexNextDate} ${rangeIndexNextTime}:00`
-    }
+    if (rangeIndexNextTime) data.nextCommunicationTime = rangeIndexNextTime + ':00'
     if (!permissions['LOG_MATURITY_DATA']) {
       data.maturity = ''
     }
@@ -217,6 +221,20 @@ class Index extends Component {
     })
   }
 
+  // 查询历史客户经理跟踪日志
+  getLogList() {
+    const data = this.state.searchForm
+    request.get({
+      url: '/leads/leads/log/getLogList',
+      data: data,
+      bindLoading: true,
+      loadingText: '加载中',
+      success: (resData) => {
+        this.setState({ logList: resData.data.pagedRecords })
+      }
+    })
+  }
+
   // 企业信息
   renderBaseInfo() {
     const { detailInfo } = this.state
@@ -243,14 +261,35 @@ class Index extends Component {
 
   // 跟踪日志
   renderRecord() {
+    const { logList } = this.state
     return (
-      <View></View>
+      <View className='p-log-list list-style-sheet'>
+        {
+          logList && logList.length > 0 ?
+            logList.map((item) =>
+              item.type === 0 &&
+                <View className='sheet-item' key={item.id}>
+                  <View className='sheet-item-content'>
+                    <View>录入人：{item.createrMemId}</View>
+                    { maturity[item.maturity] && <View>成熟度：{maturity[item.maturity]}</View> }
+                    { secondarySalesWillingness[item.secondarySalesWillingness] && <View>二次销售意愿度：{secondarySalesWillingness[item.secondarySalesWillingness]}</View> }
+                    { item.content && <View>追踪日志：{item.content}</View> }
+                    { intentionDegree[item.intentionDegree] && <View>意向程度：{intentionDegree[item.intentionDegree]}</View> }
+                    { normalSelect[item.isLoser] && <View>是否战败：{normalSelect[item.isLoser]}</View> }
+                    { item.nextCommunicationTime && <View>约定下次沟通时间：{item.nextCommunicationTime}</View> }
+                    { item.gmtCreated && <View>创建时间：{item.gmtCreated}</View> }
+                  </View>
+                </View>
+            ) :
+            <View className='u-empty'>暂无数据</View>
+        }
+      </View>
     )
   }
 
   // 底部弹框
   renderFloatLayout() {
-    const { isOpenedFloat, rangeIndexNextDate, rangeIndexNextTime, oldMaturity, oldIsLoser } = this.state
+    const { isOpenedFloat, rangeIndexNextTime, oldMaturity, oldIsLoser } = this.state
     const { form, maturityRange, maturityIndex, normalSelectRange, normalSelectIndex, secondarySalesWillingnessRange, secondarySalesWillingnessIndex, intentionDegreeRange, intentionDegreeIndex } = this.state
     const permissions = getGlobalData('permissions')
     return (
@@ -351,13 +390,7 @@ class Index extends Component {
           <View className='form-item'>
             <View className='item-name'>约定下次沟通时间</View>
             <View className='item-content'>
-              <Picker mode='date' value={rangeIndexNextDate} onChange={this.onChangeNextDate.bind(this)}>
-                <View className='item-select'>
-                  <View className='flex-1'>{rangeIndexNextDate ? rangeIndexNextDate : '请选择下次沟通日期'}</View>
-                  <AtIcon value='chevron-right' color='rgba(0,0,0,0.3)'></AtIcon>
-                </View>
-              </Picker>
-              <Picker mode='time' value={rangeIndexNextTime} onChange={this.onChangeNextTime.bind(this)}>
+              <Picker mode='date' value={rangeIndexNextTime} onChange={this.onChangeNextTime.bind(this)}>
                 <View className='item-select'>
                   <View className='flex-1'>{rangeIndexNextTime ? rangeIndexNextTime : '请选择下次沟通时间'}</View>
                   <AtIcon value='chevron-right' color='rgba(0,0,0,0.3)'></AtIcon>
@@ -372,9 +405,10 @@ class Index extends Component {
   }
 
   render () {
-    const { openBaseInfo, openRecord } = this.state
+    const { openBaseInfo, openRecord, logList } = this.state
     return (
       <View className='p-page'>
+        <AtMessage />
         <View className='p-container'>
           <View className='p-company-name'>芜湖鹏运建材贸易有限公司</View>
           <AtButton className='u-btn-handle' type='secondary' size='small' circle onClick={this.onClickEdit.bind(this)}>填写跟踪日志</AtButton>
@@ -384,14 +418,14 @@ class Index extends Component {
             onClick={this.onClickOpen.bind(this, 'openBaseInfo')}
           >
             { this.renderBaseInfo() }
-          </AtAccordion>
+          </AtAccordion> */}
           <AtAccordion
             open={openRecord}
             title='客户经理跟踪日志'
             onClick={this.onClickOpen.bind(this, 'openRecord')}
           >
             { this.renderRecord() }
-          </AtAccordion> */}
+          </AtAccordion>
           {/* 底部弹框 */}
           { this.renderFloatLayout() }
         </View>
