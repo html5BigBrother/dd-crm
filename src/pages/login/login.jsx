@@ -113,12 +113,12 @@ class Login extends Component {
       bindLoading: true,
       loadingText: '登陆中',
       success: (resData) => {
-        if (resData.data.position !== '客户经理') {
-          showModalError({
-            content: '移动端目前只支持客户经理登录，请重新输入账号密码'
-          })
-          return
-        }
+        // if (resData.data.position !== '客户经理') {
+        //   showModalError({
+        //     content: '移动端目前只支持客户经理登录，请重新输入账号密码'
+        //   })
+        //   return
+        // }
         setGlobalData('userInfo', resData.data)
         Taro.navigateTo({ url: '/pages/index/index' })
       }
