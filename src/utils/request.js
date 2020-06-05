@@ -6,7 +6,7 @@ import config from './config.js'
 import { set as setGlobalData, get as getGlobalData } from './globalData.js'
 
 function getHost() {
-  const env = 'pres'
+  const env = config.env
   let res = ''
   switch (env) {
     case 'pres':

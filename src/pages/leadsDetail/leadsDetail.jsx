@@ -48,6 +48,8 @@ class Index extends Component {
       intentionDegreeRange: [], // 意向程度
       intentionDegreeIndex: '',
       rangeIndexNextTime: '',
+      oldMaturity: '', // 上次成熟度
+      oldIsLoser: '', // 上次是否战败
     }
   }
 
@@ -82,9 +84,9 @@ class Index extends Component {
   // 成熟度选择
   onChangeMaturity(e) {
     let { form, maturityRange } = this.state
-    const maturityIndexIndex = e.detail.value
-    form.maturity = maturityRange[maturityIndexIndex].key
-    this.setState({ maturityIndexIndex, form })
+    const maturityIndex = e.detail.value
+    form.maturity = maturityRange[maturityIndex].key
+    this.setState({ maturityIndex, form })
   }
 
   // 是否战败
@@ -135,6 +137,17 @@ class Index extends Component {
   // 提交跟踪日志
   onClickSubmit() {
     const data = this.initParams()
+
+    const vRes = validate([
+      { type: 'vEmpty', value: data.isLoser, msg: '请选择是否战败' },
+      { type: 'vEmpty', value: data.content, msg: '请填写跟踪日志' },
+    ])
+
+    if (vRes !== true) {
+      Taro.atMessage({ 'message': vRes, 'type': 'error', })
+      return
+    }
+
     request.post({
       url: '/leads/leads/log/addLog',
       data: JSON.stringify(data),
@@ -143,6 +156,7 @@ class Index extends Component {
       success: () => {
         Taro.showToast({ title: '成功' })
         this.onChangeIsOpenedFloat(false)
+        this.getDetail()
         this.getLogList()
       }
     })
@@ -161,10 +175,10 @@ class Index extends Component {
     for(let i in maturity) {
       maturityRange.push({ key: i, label: maturity[i] })
     }
-    maturityRange.filter((item) => {
-      const index = item.key
-      return !(parseInt(index) >= 5 && oldMaturity < 5) || (parseInt(index) !== 6 && oldMaturity === 5 && parseInt(index) !== oldMaturity)
-    })
+    // maturityRange.filter((item) => {
+    //   const index = item.key
+    //   return !(parseInt(index) >= 5 && oldMaturity < 5) || (parseInt(index) !== 6 && oldMaturity === 5 && parseInt(index) !== oldMaturity)
+    // })
 
     // 是否战败
     let normalSelectRange = []
@@ -187,13 +201,59 @@ class Index extends Component {
     this.setState({ maturityRange, normalSelectRange, secondarySalesWillingnessRange, intentionDegreeRange })
   }
 
+  resetDetail(data) {
+    let { form, maturityRange, normalSelectRange, secondarySalesWillingnessRange, intentionDegreeRange } = this.state
+    let maturityIndex = ''
+    let normalSelectIndex = ''
+    let secondarySalesWillingnessIndex = ''
+    let intentionDegreeIndex = ''
+    const maturityData = data.maturity || '-1'
+    const isLoser = data.isLoser.toString()
+    const intentionDegreeData = data.intentionDegree || '-1'
+    const secondarySalesWillingnessData = data.secondarySalesWillingness.toString() || '-1'
+
+    form.maturity = parseInt(maturityData) > -1 ? maturityData.toString() : ''
+    form.isLoser = isLoser
+    form.intentionDegree = parseInt(intentionDegreeData) > -1 ? intentionDegreeData.toString() : ''
+    form.secondarySalesWillingness = parseInt(secondarySalesWillingnessData) > -1 ? secondarySalesWillingnessData.toString() : ''
+    
+    if (form.maturity) {
+      maturityRange.forEach((item, index) => {
+        if (item.key == form.maturity) maturityIndex = index
+      })
+    }
+    if (form.isLoser) {
+      normalSelectRange.forEach((item, index) => {
+        if (item.key == form.isLoser) normalSelectIndex = index
+      })
+    }
+    if (form.intentionDegree) {
+      intentionDegreeRange.forEach((item, index) => {
+        if (item.key == form.intentionDegree) intentionDegreeIndex = index
+      })
+    }
+    if (form.secondarySalesWillingness) {
+      secondarySalesWillingnessRange.forEach((item, index) => {
+        if (item.key == form.secondarySalesWillingness) secondarySalesWillingnessIndex = index
+      })
+    }
+    
+    const oldMaturity = parseInt(form.maturity)
+    const oldIsLoser = isLoser
+
+    this.setState({ form, oldMaturity, oldIsLoser, maturityIndex, normalSelectIndex, intentionDegreeIndex, secondarySalesWillingnessIndex, detailInfo: data })
+  }
+
   initParams () {
     const permissions = getGlobalData('permissions')
     const { rangeIndexNextTime } = this.state
     let data = this.state.form
     let params = {}
 
-    if (rangeIndexNextTime) data.nextCommunicationTime = rangeIndexNextTime + ':00'
+    if (rangeIndexNextTime) {
+      if (rangeIndexNextTime.length > 12) data.nextCommunicationTime = rangeIndexNextTime + ':00'
+      else data.nextCommunicationTime = rangeIndexNextTime + ' 00:00:00'
+    }
     if (!permissions['LOG_MATURITY_DATA']) {
       data.maturity = ''
     }
@@ -223,7 +283,7 @@ class Index extends Component {
       bindLoading: true,
       loadingText: '加载中',
       success: (resData) => {
-        this.setState({ detailInfo: resData.data })
+        this.resetDetail(resData.data)
       }
     })
   }
@@ -311,129 +371,132 @@ class Index extends Component {
   }
 
   // 底部弹框
-  renderFloatLayout() {
+  // renderFloatLayout() {
+  //   const { isOpenedFloat, rangeIndexNextTime, oldMaturity, oldIsLoser } = this.state
+  //   const { form, maturityRange, maturityIndex, normalSelectRange, normalSelectIndex, secondarySalesWillingnessRange, secondarySalesWillingnessIndex, intentionDegreeRange, intentionDegreeIndex } = this.state
+  //   const permissions = getGlobalData('permissions')
+  //   return (
+  //     <AtFloatLayout isOpened={isOpenedFloat} onClose={this.onChangeIsOpenedFloat.bind(this, false)}>
+  //       <View className='form-style'>
+  //         { permissions && permissions['LOG_MATURITY_DATA'] &&
+  //           <View className='form-item'>
+  //             <View className='item-name'>成熟度</View>
+  //             <View className='item-content'>
+  //               <Picker
+  //                 mode='selector'
+  //                 range={maturityRange}
+  //                 value={maturityIndex}
+  //                 rangeKey='label'
+  //                 disabled={oldMaturity > 5 || oldIsLoser === "1" || !permissions["LOG_MATURITY"]}
+  //                 onChange={this.onChangeMaturity.bind(this)}
+  //               >
+  //                 <View className='item-select'>
+  //                   <View className='flex-1'>{maturityRange[maturityIndex] ? maturityRange[maturityIndex].label : '请选择'}</View>
+  //                   <AtIcon value='chevron-right' color='rgba(0,0,0,0.3)'></AtIcon>
+  //                 </View>
+  //               </Picker>
+  //             </View>
+  //           </View>
+  //         }
+  //         { permissions && permissions['LOG_IS_LOSER_DATA'] &&
+  //           <View className='form-item'>
+  //             <View className='item-name'>是否战败</View>
+  //             <View className='item-content'>
+  //               <Picker
+  //                 mode='selector'
+  //                 range={normalSelectRange}
+  //                 value={normalSelectIndex}
+  //                 rangeKey='label'
+  //                 disabled={oldMaturity >= 8 || !permissions["LOG_IS_LOSER"]}
+  //                 onChange={this.onChangeLoser.bind(this)}
+  //               >
+  //                 <View className='item-select'>
+  //                   <View className='flex-1'>{normalSelectRange[normalSelectIndex] ? normalSelectRange[normalSelectIndex].label : '请选择'}</View>
+  //                   <AtIcon value='chevron-right' color='rgba(0,0,0,0.3)'></AtIcon>
+  //                 </View>
+  //               </Picker>
+  //             </View>
+  //           </View>
+  //         }
+  //         { permissions && permissions['LOG_SECONDARY_SALES_WILLINGNESS_DATA'] &&
+  //           <View className='form-item'>
+  //             <View className='item-name'>二次销售意愿度</View>
+  //             <View className='item-content'>
+  //               <Picker
+  //                 mode='selector'
+  //                 range={secondarySalesWillingnessRange}
+  //                 value={secondarySalesWillingnessIndex}
+  //                 rangeKey='label'
+  //                 disabled={!permissions["LOG_SECONDARY_SALES_WILLINGNESS"]}
+  //                 onChange={this.onChangeSecondarySalesWillingness.bind(this)}
+  //               >
+  //                 <View className='item-select'>
+  //                   <View className='flex-1'>{secondarySalesWillingnessRange[secondarySalesWillingnessIndex] ? secondarySalesWillingnessRange[secondarySalesWillingnessIndex].label : '请选择'}</View>
+  //                   <AtIcon value='chevron-right' color='rgba(0,0,0,0.3)'></AtIcon>
+  //                 </View>
+  //               </Picker>
+  //             </View>
+  //           </View>
+  //         }
+  //         <View className='form-item'>
+  //           <View className='item-name'>跟踪日志</View>
+  //           <View className='item-content'>
+  //             <AtTextarea
+  //               count={false}
+  //               value={form.content}
+  //               placeholder='请填写跟踪日志'
+  //               maxLength={200}
+  //               onChange={this.onChangeTextarea.bind(this)}
+  //             ></AtTextarea>
+  //           </View>
+  //         </View>
+  //         { permissions && permissions['LOG_INTENTIONDEGREE_DATA'] &&
+  //           <View className='form-item'>
+  //             <View className='item-name'>意向程度</View>
+  //             <View className='item-content'>
+  //               <Picker
+  //                 mode='selector'
+  //                 range={intentionDegreeRange}
+  //                 value={intentionDegreeIndex}
+  //                 rangeKey='label'
+  //                 disabled={!permissions["LOG_INTENTIONDEGREE"]}
+  //                 onChange={this.onChangeIntentionDegree.bind(this)}
+  //               >
+  //                 <View className='item-select'>
+  //                   <View className='flex-1'>{intentionDegreeRange[intentionDegreeIndex] ? intentionDegreeRange[intentionDegreeIndex].label : '请选择'}</View>
+  //                   <AtIcon value='chevron-right' color='rgba(0,0,0,0.3)'></AtIcon>
+  //                 </View>
+  //               </Picker>
+  //             </View>
+  //           </View>
+  //         }
+  //         <View className='form-item'>
+  //           <View className='item-name'>约定下次沟通时间</View>
+  //           <View className='item-content'>
+  //             <Picker mode='date' value={rangeIndexNextTime} onChange={this.onChangeNextTime.bind(this)}>
+  //               <View className='item-select'>
+  //                 <View className='flex-1'>{rangeIndexNextTime ? rangeIndexNextTime : '请选择下次沟通时间'}</View>
+  //                 <AtIcon value='chevron-right' color='rgba(0,0,0,0.3)'></AtIcon>
+  //               </View>
+  //             </Picker>
+  //           </View>
+  //         </View>
+  //       </View>
+  //       <AtButton className='p-btn-submit' type='primary' onClick={this.onClickSubmit.bind(this)}>提交</AtButton>
+  //     </AtFloatLayout>
+  //   )
+  // }
+
+  render () {
+    const { openBaseInfo, openRecord, detailInfo } = this.state
     const { isOpenedFloat, rangeIndexNextTime, oldMaturity, oldIsLoser } = this.state
     const { form, maturityRange, maturityIndex, normalSelectRange, normalSelectIndex, secondarySalesWillingnessRange, secondarySalesWillingnessIndex, intentionDegreeRange, intentionDegreeIndex } = this.state
     const permissions = getGlobalData('permissions')
     return (
-      <AtFloatLayout isOpened={isOpenedFloat} onClose={this.onChangeIsOpenedFloat.bind(this, false)}>
-        <View className='form-style'>
-          { permissions && permissions['LOG_MATURITY_DATA'] &&
-            <View className='form-item'>
-              <View className='item-name'>成熟度</View>
-              <View className='item-content'>
-                <Picker
-                  mode='selector'
-                  range={maturityRange}
-                  value={maturityIndex}
-                  rangeKey='label'
-                  disabled={oldMaturity > 5 || oldIsLoser === "1" || !permissions["LOG_MATURITY"]}
-                  onChange={this.onChangeMaturity.bind(this)}
-                >
-                  <View className='item-select'>
-                    <View className='flex-1'>{maturityRange[maturityIndex] ? maturityRange[maturityIndex].label : '请选择'}</View>
-                    <AtIcon value='chevron-right' color='rgba(0,0,0,0.3)'></AtIcon>
-                  </View>
-                </Picker>
-              </View>
-            </View>
-          }
-          { permissions && permissions['LOG_IS_LOSER_DATA'] &&
-            <View className='form-item'>
-              <View className='item-name'>是否战败</View>
-              <View className='item-content'>
-                <Picker
-                  mode='selector'
-                  range={normalSelectRange}
-                  value={normalSelectIndex}
-                  rangeKey='label'
-                  disabled={oldMaturity >= 8 || !permissions["LOG_IS_LOSER"]}
-                  onChange={this.onChangeLoser.bind(this)}
-                >
-                  <View className='item-select'>
-                    <View className='flex-1'>{normalSelectRange[normalSelectIndex] ? normalSelectRange[normalSelectIndex].label : '请选择'}</View>
-                    <AtIcon value='chevron-right' color='rgba(0,0,0,0.3)'></AtIcon>
-                  </View>
-                </Picker>
-              </View>
-            </View>
-          }
-          { permissions && permissions['LOG_SECONDARY_SALES_WILLINGNESS_DATA'] &&
-            <View className='form-item'>
-              <View className='item-name'>二次销售意愿度</View>
-              <View className='item-content'>
-                <Picker
-                  mode='selector'
-                  range={secondarySalesWillingnessRange}
-                  value={secondarySalesWillingnessIndex}
-                  rangeKey='label'
-                  disabled={!permissions["LOG_SECONDARY_SALES_WILLINGNESS"]}
-                  onChange={this.onChangeSecondarySalesWillingness.bind(this)}
-                >
-                  <View className='item-select'>
-                    <View className='flex-1'>{secondarySalesWillingnessRange[secondarySalesWillingnessIndex] ? secondarySalesWillingnessRange[secondarySalesWillingnessIndex].label : '请选择'}</View>
-                    <AtIcon value='chevron-right' color='rgba(0,0,0,0.3)'></AtIcon>
-                  </View>
-                </Picker>
-              </View>
-            </View>
-          }
-          <View className='form-item'>
-            <View className='item-name'>跟踪日志</View>
-            <View className='item-content'>
-              <AtTextarea
-                count={false}
-                value={form.content}
-                placeholder='请填写跟踪日志'
-                maxLength={200}
-                onChange={this.onChangeTextarea.bind(this)}
-              ></AtTextarea>
-            </View>
-          </View>
-          { permissions && permissions['LOG_INTENTIONDEGREE_DATA'] &&
-            <View className='form-item'>
-              <View className='item-name'>意向程度</View>
-              <View className='item-content'>
-                <Picker
-                  mode='selector'
-                  range={intentionDegreeRange}
-                  value={intentionDegreeIndex}
-                  rangeKey='label'
-                  disabled={!permissions["LOG_INTENTIONDEGREE"]}
-                  onChange={this.onChangeIntentionDegree.bind(this)}
-                >
-                  <View className='item-select'>
-                    <View className='flex-1'>{intentionDegreeRange[intentionDegreeIndex] ? intentionDegreeRange[intentionDegreeIndex].label : '请选择'}</View>
-                    <AtIcon value='chevron-right' color='rgba(0,0,0,0.3)'></AtIcon>
-                  </View>
-                </Picker>
-              </View>
-            </View>
-          }
-          <View className='form-item'>
-            <View className='item-name'>约定下次沟通时间</View>
-            <View className='item-content'>
-              <Picker mode='date' value={rangeIndexNextTime} onChange={this.onChangeNextTime.bind(this)}>
-                <View className='item-select'>
-                  <View className='flex-1'>{rangeIndexNextTime ? rangeIndexNextTime : '请选择下次沟通时间'}</View>
-                  <AtIcon value='chevron-right' color='rgba(0,0,0,0.3)'></AtIcon>
-                </View>
-              </Picker>
-            </View>
-          </View>
-        </View>
-        <AtButton className='p-btn-submit' type='primary' onClick={this.onClickSubmit.bind(this)}>提交</AtButton>
-      </AtFloatLayout>
-    )
-  }
-
-  render () {
-    const { openBaseInfo, openRecord } = this.state
-    return (
       <View className='p-page'>
         <AtMessage />
         <View className='p-container'>
-          <View className='p-company-name'>芜湖鹏运建材贸易有限公司</View>
+          <View className='p-company-name'>{detailInfo.companyName}</View>
           <AtButton className='u-btn-handle' type='secondary' size='small' circle onClick={this.onClickEdit.bind(this)}>填写跟踪日志</AtButton>
           {/* <AtAccordion
             open={openBaseInfo}
@@ -450,7 +513,115 @@ class Index extends Component {
             { this.renderRecord() }
           </AtAccordion>
           {/* 底部弹框 */}
-          { this.renderFloatLayout() }
+          {/* { this.renderFloatLayout() } */}
+          <AtFloatLayout isOpened={isOpenedFloat} onClose={this.onChangeIsOpenedFloat.bind(this, false)}>
+            <View className='form-style'>
+              { permissions && permissions['LOG_MATURITY_DATA'] &&
+                <View className='form-item'>
+                  <View className='item-name'>成熟度</View>
+                  <View className='item-content'>
+                    <Picker
+                      mode='selector'
+                      range={maturityRange}
+                      value={maturityIndex}
+                      rangeKey='label'
+                      disabled={oldMaturity > 5 || oldIsLoser === "1" || !permissions["LOG_MATURITY"]}
+                      onChange={this.onChangeMaturity.bind(this)}
+                    >
+                      <View className='item-select'>
+                        <View className='flex-1'>{maturityRange[maturityIndex] ? maturityRange[maturityIndex].label : '请选择'}</View>
+                        <AtIcon value='chevron-right' color='rgba(0,0,0,0.3)'></AtIcon>
+                      </View>
+                    </Picker>
+                  </View>
+                </View>
+              }
+              { permissions && permissions['LOG_IS_LOSER_DATA'] &&
+                <View className='form-item'>
+                  <View className='item-name'>是否战败</View>
+                  <View className='item-content'>
+                    <Picker
+                      mode='selector'
+                      range={normalSelectRange}
+                      value={normalSelectIndex}
+                      rangeKey='label'
+                      disabled={oldMaturity >= 8 || !permissions["LOG_IS_LOSER"]}
+                      onChange={this.onChangeLoser.bind(this)}
+                    >
+                      <View className='item-select'>
+                        <View className='flex-1'>{normalSelectRange[normalSelectIndex] ? normalSelectRange[normalSelectIndex].label : '请选择'}</View>
+                        <AtIcon value='chevron-right' color='rgba(0,0,0,0.3)'></AtIcon>
+                      </View>
+                    </Picker>
+                  </View>
+                </View>
+              }
+              { permissions && permissions['LOG_SECONDARY_SALES_WILLINGNESS_DATA'] &&
+                <View className='form-item'>
+                  <View className='item-name'>二次销售意愿度</View>
+                  <View className='item-content'>
+                    <Picker
+                      mode='selector'
+                      range={secondarySalesWillingnessRange}
+                      value={secondarySalesWillingnessIndex}
+                      rangeKey='label'
+                      disabled={!permissions["LOG_SECONDARY_SALES_WILLINGNESS"]}
+                      onChange={this.onChangeSecondarySalesWillingness.bind(this)}
+                    >
+                      <View className='item-select'>
+                        <View className='flex-1'>{secondarySalesWillingnessRange[secondarySalesWillingnessIndex] ? secondarySalesWillingnessRange[secondarySalesWillingnessIndex].label : '请选择'}</View>
+                        <AtIcon value='chevron-right' color='rgba(0,0,0,0.3)'></AtIcon>
+                      </View>
+                    </Picker>
+                  </View>
+                </View>
+              }
+              <View className='form-item'>
+                <View className='item-name'>跟踪日志</View>
+                <View className='item-content'>
+                  <AtTextarea
+                    count={false}
+                    value={form.content}
+                    placeholder='请填写跟踪日志'
+                    maxLength={200}
+                    onChange={this.onChangeTextarea.bind(this)}
+                  ></AtTextarea>
+                </View>
+              </View>
+              { permissions && permissions['LOG_INTENTIONDEGREE_DATA'] &&
+                <View className='form-item'>
+                  <View className='item-name'>意向程度</View>
+                  <View className='item-content'>
+                    <Picker
+                      mode='selector'
+                      range={intentionDegreeRange}
+                      value={intentionDegreeIndex}
+                      rangeKey='label'
+                      disabled={!permissions["LOG_INTENTIONDEGREE"]}
+                      onChange={this.onChangeIntentionDegree.bind(this)}
+                    >
+                      <View className='item-select'>
+                        <View className='flex-1'>{intentionDegreeRange[intentionDegreeIndex] ? intentionDegreeRange[intentionDegreeIndex].label : '请选择'}</View>
+                        <AtIcon value='chevron-right' color='rgba(0,0,0,0.3)'></AtIcon>
+                      </View>
+                    </Picker>
+                  </View>
+                </View>
+              }
+              <View className='form-item'>
+                <View className='item-name'>约定下次沟通时间</View>
+                <View className='item-content'>
+                  <Picker mode='date' value={rangeIndexNextTime} onChange={this.onChangeNextTime.bind(this)}>
+                    <View className='item-select'>
+                      <View className='flex-1'>{rangeIndexNextTime ? rangeIndexNextTime : '请选择下次沟通时间'}</View>
+                      <AtIcon value='chevron-right' color='rgba(0,0,0,0.3)'></AtIcon>
+                    </View>
+                  </Picker>
+                </View>
+              </View>
+            </View>
+            <AtButton className='p-btn-submit' type='primary' onClick={this.onClickSubmit.bind(this)}>提交</AtButton>
+          </AtFloatLayout>
         </View>
       </View>
     )

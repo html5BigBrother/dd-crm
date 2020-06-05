@@ -1,7 +1,6 @@
 module.exports = {
-  env: 'pres',
-  host: 'https://wx.zhuozhuwang.com',
-  hostOnline: 'https://wx.zhuozhuwang.com',
-  hostPre: 'https://wxpre.zhuozhuwang.com', // https://wxpre.zhuozhuwang.com
+  env: '',
+  host: 'https://star-crm.qjdchina.com',
+  hostOnline: 'https://star-crm.qjdchina.com',
   hostPres: 'https://prestar-crm.qjdchina.com',
 }

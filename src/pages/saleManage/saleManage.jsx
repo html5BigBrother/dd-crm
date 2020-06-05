@@ -1,13 +1,13 @@
 import Taro, { Component } from '@tarojs/taro'
 import { View, Button, Text, Navigator, Image, Picker } from '@tarojs/components'
-import { AtTabs, AtTabsPane, AtButton, AtFloatLayout, AtTextarea, AtIcon, AtMessage } from 'taro-ui'
+import { AtTabs, AtTabsPane, AtButton, AtFloatLayout, AtTextarea, AtIcon, AtMessage, AtPagination, AtSearchBar, AtModal, AtModalContent, AtAccordion } from 'taro-ui'
 import './saleManage.styl'
 
 import validate from '../../utils/validate'
 import { taskStatus, taskType, dealStatus, maturity, intentionDegree,
   normalSelect, secondarySalesWillingness, currentProgress, vipLevel,
   customerSource, leadType, companyType, registerSource, creditStatus,
-  source, mark, giveUpReason
+  source, mark, giveUpReason, post
 } from '../../utils/enums'
 import { navigateTo } from '../../utils/util'
 import { set as setGlobalData, get as getGlobalData } from '../../utils/globalData.js'
@@ -20,31 +20,39 @@ class Index extends Component {
     this.state = {
       current: 0,
       isOpenedFloat: false,
+      isOpenedModal: false,
       searchFormPrivate: {
+        companyName: '',
         descs: ['last_get_customers_time'],
         pageNo: 1,
         pageSize: 10,
         menuSource: 7, // 菜单 我的客户
       },
       searchFormPublic: {
+        companyName: '',
         descs: ['last_picked_out_time'],
         inHighSeas: 1,
         pageNo: 1,
         pageSize: 10,
         menuSource: 0, // 菜单 公海
       },
+      totalPrivate: 0,
+      totalPublic: 0,
+      searchValuePrivate: '',
+      searchValuePublic: '',
       privateList: [],
       publicList: [],
       giveUpReasonRange: [],
       giveUpReasonIndex: '',
       giveUpReasonText: '',
-      currentId: ''
+      currentId: '',
+      phoneList: [] // 电话列表
     }
   }
 
   componentDidMount() {
     this.resetRange()
-    this.switchCurrent()
+    this.switchCurrent(this.state.current)
   }
 
   componentWillReceiveProps (nextProps) {
@@ -66,12 +74,52 @@ class Index extends Component {
     this.switchCurrent(value)
   }
 
-  onClickGiveUp(item) {
+  onClickGiveUp(item, e) {
+    console.log('isOpenedFloat:' + this.state.isOpenedFloat)
+    e.stopPropagation()
     this.setState({
       isOpenedFloat: true,
       giveUpReasonIndex: '',
       giveUpReasonText: '',
       currentId: item.id
+    })
+  }
+
+  onClickPhoneList(item) {
+    const data = { leadsId: item.id }
+    request.get({
+      url: '/leads/leads/contacts/getContactsList',
+      data,
+      bindLoading: true,
+      loadingText: '加载中',
+      success: (resData) => {
+        let phoneList = resData.data || []
+        if (phoneList && phoneList.length > 0) {
+          phoneList.forEach((phoneItem) => phoneItem.openPhone = true)
+          this.setState({
+            isOpenedModal: true,
+            phoneList
+          })
+        } else {
+          Taro.atMessage({ 'message': '该企业下暂无可联系人电话', 'type': 'error', })
+        }
+      }
+    })
+  }
+
+  // 拨打电话弹框控制手风琴
+  onClickOpen(index) {
+    let { phoneList } = this.state
+    phoneList[index].openPhone = !phoneList[index].openPhone
+    this.setState({ phoneList })
+  }
+
+  // 拨打电话
+  onClickPhone(phoneNum) {
+    dd.showCallMenu({
+      phoneNumber: phoneNum, // 期望拨打的电话号码
+      code: '+86', // 国家代号，中国是+86
+      showDingCall: false, // 是否显示钉钉电话
     })
   }
 
@@ -82,6 +130,7 @@ class Index extends Component {
   onClickSelect(item) {
     const userInfo = getGlobalData('userInfo')
     let surplusLeads = userInfo.leadsLimit - userInfo.hasLeads
+    console.log(!!Taro.showmOdal)
     if (surplusLeads === 0) {
       Taro.showToast({ title: '您的客户数已满，无法从公海挑入' })
     } else {
@@ -101,7 +150,7 @@ class Index extends Component {
               loadingText: '加载中',
               success: () => {
                 Taro.showToast({ title: '挑入成功' })
-                this.switchCurrent()
+                this.switchCurrent(this.state.current)
               }
             })
           }
@@ -113,21 +162,22 @@ class Index extends Component {
   // 放弃客户
   onClickSubmit() {
     const { currentId, giveUpReasonRange, giveUpReasonIndex, giveUpReasonText } = this.state
-    const data = {
-      circulationSource: 7,
-      leadsId: [currentId],
-      reason: giveUpReasonRange[giveUpReasonIndex].key,
-      remark: giveUpReasonText
-    }
 
     const vRes = validate([
-      { type: 'vEmpty', value: data.reason, msg: '请选择放弃原因' },
-      { type: 'vEmpty', value: data.remark, msg: '请填写备注' },
+      { type: 'vEmpty', value: giveUpReasonIndex, msg: '请选择放弃原因' },
+      { type: 'vEmpty', value: giveUpReasonText, msg: '请填写备注' },
     ])
 
     if (vRes !== true) {
       Taro.atMessage({ 'message': vRes, 'type': 'error', })
       return
+    }
+
+    const data = {
+      circulationSource: 7,
+      leadsId: [currentId],
+      reason: giveUpReasonRange[giveUpReasonIndex].key,
+      remark: giveUpReasonText
     }
 
     request.post({
@@ -138,7 +188,7 @@ class Index extends Component {
       success: () => {
         Taro.showToast({ title: '成功' })
         this.onChangeIsOpenedFloat(false)
-        this.switchCurrent()
+        this.switchCurrent(this.state.current)
       }
     })
   }
@@ -154,6 +204,45 @@ class Index extends Component {
 
   onChangeLoser(e) {
     this.setState({ giveUpReasonIndex: e.detail.value })
+  }
+
+  onChangeSearchPrivate(value) {
+    this.setState({ searchValuePrivate: value })
+  }
+
+  onChangeSearchPublic(value) {
+    this.setState({ searchValuePublic: value })
+  }
+
+  // 关闭拨打电话弹框
+  onCloseModal() {
+    this.setState({ isOpenedModal: false })
+  }
+
+  onActionClickSearchPrivate() {
+    let { searchFormPrivate, searchValuePrivate } = this.state
+    searchFormPrivate.companyName = searchValuePrivate
+    this.setState({ searchFormPrivate }, () => {
+      this.getLeadsListPrivate(1)
+    })
+  }
+
+  onActionClickSearchPublic() {
+    let { searchFormPublic, searchValuePublic } = this.state
+    searchFormPublic.companyName = searchValuePublic
+    this.setState({ searchFormPublic }, () => {
+      this.getLeadsListPublic(1)
+    })
+  }
+
+  onPageChangePrivate(e) {
+    const { type, current } = e
+    this.getLeadsListPrivate(current)
+  }
+
+  onPageChangePublic(e) {
+    const { type, current } = e
+    this.getLeadsListPublic(current)
   }
 
   initSearchFormPrivate () {
@@ -178,8 +267,7 @@ class Index extends Component {
     this.setState({ giveUpReasonRange })
   }
 
-  switchCurrent(value) {
-    const current = value || this.state.current
+  switchCurrent(current) {
     switch (current) {
       case 0:
         this.getLeadsListPrivate()
@@ -190,37 +278,67 @@ class Index extends Component {
     }
   }
 
-  getLeadsListPrivate() {
+  getLeadsListPrivate(pageNo) {
     const data = this.initSearchFormPrivate()
+    if (pageNo) data.pageNo = pageNo
     request.post({
       url: '/leads/leads/getLeadsList',
       data: JSON.stringify(data),
       bindLoading: true,
       loadingText: '加载中',
       success: (resData) => {
-        this.setState({ privateList: resData.data.pagedRecords })
+        let { searchFormPrivate } = this.state
+        searchFormPrivate.pageNo = resData.data.pageNo
+        this.setState({
+          privateList: resData.data.pagedRecords,
+          totalPrivate: resData.data.totalCount,
+          searchFormPrivate
+        })
       }
     })
   }
 
-  getLeadsListPublic() {
+  getLeadsListPublic(pageNo) {
     const data = this.state.searchFormPublic
+    if (pageNo) data.pageNo = pageNo
     request.post({
       url: '/leads/leads/getLeadsList',
       data: JSON.stringify(data),
       bindLoading: true,
       loadingText: '加载中',
       success: (resData) => {
-        this.setState({ publicList: resData.data.pagedRecords })
+        let { searchFormPublic } = this.state
+        searchFormPublic.pageNo = resData.data.pageNo
+        this.setState({
+          publicList: resData.data.pagedRecords,
+          totalPublic: resData.data.totalCount,
+          searchFormPublic
+        })
       }
     })
   }
 
   renderPrivateList() {
-    const { privateList } = this.state
+    const { privateList, searchFormPrivate, totalPrivate, searchValuePrivate } = this.state
     const permissions = getGlobalData('permissions')
     return (
       <View className='p-section-private'>
+        <AtSearchBar
+          showActionButton
+          placeholder='企业名称'
+          value={searchValuePrivate}
+          onChange={this.onChangeSearchPrivate.bind(this)}
+          onActionClick={this.onActionClickSearchPrivate.bind(this)}
+        />
+        <View className='p-pagination-wrap'>
+          <AtPagination
+            total={totalPrivate}
+            pageSize={searchFormPrivate.pageSize}
+            current={searchFormPrivate.pageNo}
+            icon
+            onPageChange={this.onPageChangePrivate.bind(this)}
+          ></AtPagination>
+        </View>
         <View className='p-list list-style-sheet'>
           {
             privateList.map((item) =>
@@ -262,10 +380,11 @@ class Index extends Component {
                   {/* <View>待跟进时间：{item.waitFollow || '-'}</View> */}
                 </View>
                 <View className='u-edit'>
-                  <AtButton className='u-btn-handle' type='secondary' size='small' onClick={this.onClickToDetail.bind(this, item)}>跟踪日志</AtButton>
+                  <Button className='p-btn-handle' plain hoverClass='button-hover' onClick={this.onClickToDetail.bind(this, item)}>跟踪日志</Button>
                   { permissions && permissions["MY_GIVEUP_LEADS"] &&
-                    <AtButton className='u-btn-handle' type='secondary' size='small' onClick={this.onClickGiveUp.bind(this, item)}>放弃客户</AtButton>
+                    <Button className='p-btn-handle' plain hoverClass='button-hover' onClick={this.onClickGiveUp.bind(this, item)}>放弃客户</Button>
                   }
+                  <Button className='p-btn-handle' plain hoverClass='button-hover' onClick={this.onClickPhoneList.bind(this, item)}>拨打电话</Button>
                 </View>
               </View>
             )
@@ -276,9 +395,25 @@ class Index extends Component {
   }
 
   renderPublicList() {
-    const { publicList } = this.state
+    const { publicList, searchFormPublic, totalPublic, searchValuePublic } = this.state
     return (
       <View className='p-section-public'>
+        <AtSearchBar
+          showActionButton
+          placeholder='企业名称'
+          value={searchValuePublic}
+          onChange={this.onChangeSearchPublic.bind(this)}
+          onActionClick={this.onActionClickSearchPublic.bind(this)}
+        />
+        <View className='p-pagination-wrap'>
+          <AtPagination
+            total={totalPublic}
+            pageSize={searchFormPublic.pageSize}
+            current={searchFormPublic.pageNo}
+            icon
+            onPageChange={this.onPageChangePublic.bind(this)}
+          ></AtPagination>
+        </View>
         <View className='p-list list-style-sheet'>
           {
             publicList.map((item) =>
@@ -318,7 +453,7 @@ class Index extends Component {
                   {/* <View>leads创建时间：{item.gmtCreated}</View> */}
                 </View>
                 <View className='u-edit'>
-                  <AtButton className='u-btn-handle' type='secondary' size='small' onClick={this.onClickSelect.bind(this, item)}>挑入</AtButton>
+                  <Button className='p-btn-handle' plain hoverClass='button-hover' onClick={this.onClickSelect.bind(this, item)}>挑入</Button>
                 </View>
               </View>
             )
@@ -328,48 +463,49 @@ class Index extends Component {
     )
   }
 
-  renderFloatLayout() {
-    const { isOpenedFloat, giveUpReasonRange, giveUpReasonIndex, giveUpReasonText } = this.state
-    return (
-      <AtFloatLayout isOpened={isOpenedFloat} onClose={this.onChangeIsOpenedFloat.bind(this, false)}>
-        <View className='form-style'>
-          <View className='form-item'>
-            <View className='item-name'>放弃原因</View>
-            <View className='item-content'>
-              <Picker
-                mode='selector'
-                range={giveUpReasonRange}
-                value={giveUpReasonIndex}
-                rangeKey='label'
-                onChange={this.onChangeLoser.bind(this)}
-              >
-                <View className='item-select'>
-                  <View className='flex-1'>{giveUpReasonRange[giveUpReasonIndex] ? giveUpReasonRange[giveUpReasonIndex].label : '请选择'}</View>
-                  <AtIcon value='chevron-right' color='rgba(0,0,0,0.3)'></AtIcon>
-                </View>
-              </Picker>
-            </View>
-          </View>
-          <View className='form-item'>
-            <View className='item-name'>备注</View>
-            <View className='item-content'>
-              <AtTextarea
-                count={false}
-                value={giveUpReasonText}
-                placeholder='请说明原因'
-                maxLength={200}
-                onChange={this.onChangeTextarea.bind(this)}
-              ></AtTextarea>
-            </View>
-          </View>
-        </View>
-        <AtButton className='p-btn-submit' type='primary' onClick={this.onClickSubmit.bind(this)}>提交</AtButton>
-      </AtFloatLayout>
-    )
-  }
+  // renderFloatLayout() {
+  //   const { isOpenedFloat, giveUpReasonRange, giveUpReasonIndex, giveUpReasonText } = this.state
+  //   return (
+  //     <AtFloatLayout isOpened={isOpenedFloat} onClose={this.onChangeIsOpenedFloat.bind(this, false)}>
+  //       <View className='form-style'>
+  //         <View className='form-item'>
+  //           <View className='item-name'>放弃原因</View>
+  //           <View className='item-content'>
+  //             <Picker
+  //               mode='selector'
+  //               range={giveUpReasonRange}
+  //               value={giveUpReasonIndex}
+  //               rangeKey='label'
+  //               onChange={this.onChangeLoser.bind(this)}
+  //             >
+  //               <View className='item-select'>
+  //                 <View className='flex-1'>{giveUpReasonRange[giveUpReasonIndex] ? giveUpReasonRange[giveUpReasonIndex].label : '请选择'}</View>
+  //                 <AtIcon value='chevron-right' color='rgba(0,0,0,0.3)'></AtIcon>
+  //               </View>
+  //             </Picker>
+  //           </View>
+  //         </View>
+  //         <View className='form-item'>
+  //           <View className='item-name'>备注</View>
+  //           <View className='item-content'>
+  //             <AtTextarea
+  //               count={false}
+  //               value={giveUpReasonText}
+  //               placeholder='请说明原因'
+  //               maxLength={200}
+  //               onChange={this.onChangeTextarea.bind(this)}
+  //             ></AtTextarea>
+  //           </View>
+  //         </View>
+  //       </View>
+  //       <AtButton className='p-btn-submit' type='primary' onClick={this.onClickSubmit.bind(this)}>提交</AtButton>
+  //     </AtFloatLayout>
+  //   )
+  // }
 
   render () {
     const { current } = this.state
+    const { isOpenedFloat, isOpenedModal, giveUpReasonRange, giveUpReasonIndex, giveUpReasonText, phoneList } = this.state
     const tabList = [{ title: '我的客户' }, { title: '公海' }]
     return (
       <View className='p-page'>
@@ -384,7 +520,68 @@ class Index extends Component {
             </AtTabsPane>
           </AtTabs>
           {/* 底部弹框 */}
-          { this.renderFloatLayout() }
+          {/* { this.renderFloatLayout() } */}
+          <AtFloatLayout isOpened={isOpenedFloat} onClose={this.onChangeIsOpenedFloat.bind(this, false)}>
+            <View className='form-style'>
+              <View className='form-item'>
+                <View className='item-name'>放弃原因</View>
+                <View className='item-content'>
+                  <Picker
+                    mode='selector'
+                    range={giveUpReasonRange}
+                    value={giveUpReasonIndex}
+                    rangeKey='label'
+                    onChange={this.onChangeLoser.bind(this)}
+                  >
+                    <View className='item-select'>
+                      <View className='flex-1'>{giveUpReasonRange[giveUpReasonIndex] ? giveUpReasonRange[giveUpReasonIndex].label : '请选择'}</View>
+                      <AtIcon value='chevron-right' color='rgba(0,0,0,0.3)'></AtIcon>
+                    </View>
+                  </Picker>
+                </View>
+              </View>
+              <View className='form-item'>
+                <View className='item-name'>备注</View>
+                <View className='item-content'>
+                  <AtTextarea
+                    count={false}
+                    value={giveUpReasonText}
+                    placeholder='请说明原因'
+                    maxLength={200}
+                    onChange={this.onChangeTextarea.bind(this)}
+                  ></AtTextarea>
+                </View>
+              </View>
+            </View>
+            <AtButton className='p-btn-submit' type='primary' onClick={this.onClickSubmit.bind(this)}>提交</AtButton>
+          </AtFloatLayout>
+
+          {/* 拨打电话列表弹框 */}
+          <AtModal isOpened={isOpenedModal} onClose={this.onCloseModal.bind(this)}>
+            <AtModalContent>
+              {
+                phoneList && phoneList.map((item, index) =>
+                  <AtAccordion
+                    open={item.openPhone}
+                    title={`${item.name}（${post[item.post]}）`}
+                    key={item.id}
+                    onClick={this.onClickOpen.bind(this, index)}
+                  >
+                    {
+                      item.phoneNums.map((item2) =>
+                        <View className='p-phone-item' key>
+                          <View className='flex-1'>
+                            <Text onClick={this.onClickPhone.bind(this, item2)}>{item2}</Text>
+                          </View>
+                          <AtIcon value='phone' color='#2eadb6' size='20' onClick={this.onClickPhone.bind(this, item2)}></AtIcon>
+                        </View>
+                      )
+                    }
+                  </AtAccordion>
+                )
+              }
+            </AtModalContent>
+          </AtModal>
         </View>
       </View>
     )

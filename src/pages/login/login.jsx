@@ -8,6 +8,7 @@ import { showModalError } from '../../utils/util'
 import { set as setGlobalData, get as getGlobalData } from '../../utils/globalData.js'
 import { serverPermissionCodes } from '../../utils/role'
 import request from '../../utils/request'
+import config from '../../utils/config'
 
 
 class Login extends Component {
@@ -39,7 +40,7 @@ class Login extends Component {
 
   onClickLogin() {
     // Taro.showLoading({ titile: '哈哈哈' })
-    const data = JSON.stringify({
+    let data = JSON.stringify({
       username: this.state.username,
       password: this.state.password
     })
@@ -52,6 +53,19 @@ class Login extends Component {
     if (vRes !== true) {
       Taro.atMessage({ 'message': vRes, 'type': 'error', })
       return
+    }
+
+    // 暂时测试账号，后续删除
+    if (process.env.NODE_ENV !== 'development') {
+      if (this.state.username === 'pres' && this.state.password === 'pres') {
+        config.env = 'pres'
+        data = JSON.stringify({
+          username: 'huangzhenzhong',
+          password: '123456'
+        })
+      } else {
+        config.env = ''
+      }
     }
 
     request.post({

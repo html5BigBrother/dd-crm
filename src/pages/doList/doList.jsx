@@ -1,6 +1,6 @@
 import Taro, { Component } from '@tarojs/taro'
 import { View, Button, Text, Navigator, Image, Picker } from '@tarojs/components'
-import { AtTabs, AtTabsPane, AtButton, AtFloatLayout, AtTextarea, AtIcon, AtMessage } from 'taro-ui'
+import { AtTabs, AtTabsPane, AtButton, AtFloatLayout, AtTextarea, AtIcon, AtMessage, AtPagination } from 'taro-ui'
 import './doList.styl'
 
 import validate from '../../utils/validate'
@@ -36,6 +36,8 @@ class Index extends Component {
         receiveName: '',
         receiveMemId: ''
       },
+      totalTodo: 0,
+      totalDone: 0,
       todoList: [],
       doneList: [],
       currentId: '',
@@ -74,7 +76,9 @@ class Index extends Component {
     this.switchCurrent(value)
   }
 
-  onClickHandle(item) {
+  onClickHandle(item, e) {
+    console.log('isOpenedFloat:' + this.state.isOpenedFloat)
+    e.stopPropagation()
     this.setState({
       isOpenedFloat: true,
       rangeIndex: '',
@@ -85,20 +89,21 @@ class Index extends Component {
 
   onClickSubmit() {
     const { current, currentId, rangeData, rangeIndex, textValue } = this.state
-    const data = {
-      dealStatus: rangeData[rangeIndex].key,
-      id: currentId,
-      processResult: textValue
-    }
 
     const vRes = validate([
-      { type: 'vEmpty', value: data.dealStatus, msg: '请选择处理状态' },
-      { type: 'vEmpty', value: data.processResult, msg: '请填写处理结果' },
+      { type: 'vEmpty', value: rangeIndex, msg: '请选择处理状态' },
+      { type: 'vEmpty', value: textValue, msg: '请填写处理结果' },
     ])
 
     if (vRes !== true) {
       Taro.atMessage({ 'message': vRes, 'type': 'error', })
       return
+    }
+
+    const data = {
+      dealStatus: rangeData[rangeIndex].key,
+      id: currentId,
+      processResult: textValue
     }
 
     request.post({
@@ -125,6 +130,16 @@ class Index extends Component {
 
   onChangeDealStatus(e) {
     this.setState({ rangeIndex: e.detail.value })
+  }
+
+  onPageChangeTodo(e) {
+    const { type, current } = e
+    this.getLeadsListTodo(current)
+  }
+
+  onPageChangeDone(e) {
+    const { type, current } = e
+    this.getLeadsListDone(current)
   }
 
   initSearchFormTodo () {
@@ -158,36 +173,57 @@ class Index extends Component {
     }
   }
 
-  getLeadsListTodo() {
-    const data = this.initSearchFormTodo()
+  getLeadsListTodo(pageNo) {
+    let data = this.initSearchFormTodo()
+    if (pageNo) data.pageNo = pageNo
     request.get({
       url: '/leads/tasks/list',
       data: data,
       bindLoading: true,
       loadingText: '加载中',
       success: (resData) => {
-        this.setState({ todoList: resData.data.pagedRecords })
+        let { searchFormTodo } = this.state
+        searchFormTodo.pageNo = resData.data.pageNo
+        this.setState({
+          todoList: resData.data.pagedRecords,
+          totalTodo: resData.data.totalCount,
+          searchFormTodo,
+        })
       }
     })
   }
 
-  getLeadsListDone() {
-    const data = this.initSearchFormDone()
+  getLeadsListDone(pageNo) {
+    let data = this.initSearchFormDone()
+    if (pageNo) data.pageNo = pageNo
     request.get({
       url: '/leads/tasks/list',
       data: data,
       bindLoading: true,
       loadingText: '加载中',
       success: (resData) => {
-        this.setState({ doneList: resData.data.pagedRecords })
+        let { searchFormDone } = this.state
+        searchFormDone.pageNo = resData.data.pageNo
+        this.setState({
+          doneList: resData.data.pagedRecords,
+          totalDone: resData.data.totalCount,
+          searchFormDone,
+        })
       }
     })
   }
 
   renderTodoList() {
-    const { todoList } = this.state
+    const { todoList, searchFormTodo, totalTodo } = this.state
     return (
       <View className='p-section-todo'>
+        <AtPagination
+          total={totalTodo}
+          pageSize={searchFormTodo.pageSize}
+          current={searchFormTodo.pageNo}
+          icon
+          onPageChange={this.onPageChangeTodo.bind(this)}
+        ></AtPagination>
         <View className='p-list-todo list-style-sheet'>
           {
             todoList.map((item) =>
@@ -205,7 +241,7 @@ class Index extends Component {
                   <View>当前状态：{taskStatus[item.status]}</View>
                 </View>
                 <View className='u-edit'>
-                  <AtButton className='u-btn-handle' type='secondary' size='small' onClick={this.onClickHandle.bind(this, item)}>处理</AtButton>
+                  <Button className='p-btn-handle' plain hoverClass='button-hover' onClick={this.onClickHandle.bind(this, item)}>处理</Button>
                 </View>
               </View>
             )
@@ -216,9 +252,16 @@ class Index extends Component {
   }
 
   renderDoneList() {
-    const { doneList } = this.state
+    const { doneList, searchFormDone, totalDone } = this.state
     return (
       <View className='p-section-done'>
+        <AtPagination
+          total={totalDone}
+          pageSize={searchFormDone.pageSize}
+          current={searchFormDone.pageNo}
+          icon
+          onPageChange={this.onPageChangeDone.bind(this)}
+        ></AtPagination>
         <View className='p-list-todo list-style-sheet'>
           {
             doneList.map((item) =>
