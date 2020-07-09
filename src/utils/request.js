@@ -25,31 +25,36 @@ function ajaxUrl(url) {
   return url
 }
 
-// function parseCookie(cookieStr) {
-//   let cookieNow = getGlobalData('setCookie') || {}
-//   if (cookieStr) {
-//     cookieStr.split(';').forEach((item) => {
-//       item.trim().split(',').forEach((item2) => {
-//         let arr = item2.split('=')
-//         if (arr.length === 2) {
-//           cookieNow[arr[0].trim()] = arr[1].trim()
-//         }
-//       })
-//     })
-//   }
-//   setGlobalData('setCookie', cookieNow)
+function parseCookie(cookieStr) {
+  let cookieNow = getGlobalData('setCookie') || {}
+  if (cookieStr) {
+    let cookieStrReset = cookieStr
+    let cookieStrType = typeof cookieStr
+    if (cookieStrType.toLowerCase() !== 'string') {
+      cookieStrReset = cookieStr.join('')
+    }
+    cookieStrReset.split(';').forEach((item) => {
+      item.trim().split(',').forEach((item2) => {
+        let arr = item2.split('=')
+        if (arr.length === 2) {
+          cookieNow[arr[0].trim()] = arr[1].trim()
+        }
+      })
+    })
+  }
+  setGlobalData('setCookie', cookieNow)
 
-//   return cookieNow
-// }
+  return cookieNow
+}
 
-// function stringifyCookie() {
-//   let cookieNow = getGlobalData('setCookie') || {}
-//   let cookieStr = ''
-//   for (let key in cookieNow) {
-//     cookieStr += `${key}=${cookieNow[key]}; `
-//   }
-//   return cookieStr
-// }
+function stringifyCookie() {
+  let cookieNow = getGlobalData('setCookie') || {}
+  let cookieStr = ''
+  for (let key in cookieNow) {
+    cookieStr += `${key}=${cookieNow[key]}; `
+  }
+  return cookieStr
+}
 
 function request(opts) {
   doAjax(opts)
@@ -76,6 +81,7 @@ function doAjax({ method, url, contentType = 'json', data, loadingText, success,
   // let header = { 'Cookie': 'JSESSIONID=' + sessionId }
   // let header = { Cookie: stringifyCookie() }
   let header = {}
+  header['Cookie'] = stringifyCookie()
   if (/^post$/i.test(method)) {
     header['content-type'] = 'application/' + contentType
   }
@@ -87,13 +93,13 @@ function doAjax({ method, url, contentType = 'json', data, loadingText, success,
     data,
     success(resData) {
       const responseData = resData.data
-      // const responseHeader = resData.header
-      // if (responseHeader) {
-      //   for (let i in responseHeader) {
-      //     // 兼容部分手机set-cookie大小写的问题
-      //     /^set-cookie$/i.test(i.trim()) && parseCookie(responseHeader[i])
-      //   }
-      // }
+      const responseHeader = resData.header
+      if (responseHeader) {
+        for (let i in responseHeader) {
+          // 兼容部分手机set-cookie大小写的问题
+          /^set-cookie$/i.test(i.trim()) && parseCookie(responseHeader[i])
+        }
+      }
 
       if (loadingText && Taro.showLoading) {
         Taro.hideLoading()
